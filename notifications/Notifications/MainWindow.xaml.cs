@@ -26,7 +26,7 @@ namespace WPFApp
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotificationHandler
     {        
         public MainWindow()
         {
@@ -34,12 +34,15 @@ namespace WPFApp
 
             var swOptions = App.Glue.StickyWindows?.GetStartupOptions() ?? new SwOptions();
             swOptions.WithType(SwWindowType.Tab);
-            swOptions.WithTitle("Example Window");
+            swOptions.WithTitle("Notification Publisher");
 
             // register the window 
-            App.Glue.StickyWindows?.RegisterWindow(this, swOptions);           
+            App.Glue.StickyWindows?.RegisterWindow(this, swOptions);
+
+            App.Glue.Interop.RegisterService<INotificationHandler>(this);
         }
 
+      
         private void OnSendNotificationClick(object sender, RoutedEventArgs e)
         {
             var paramaters = new List<GlueMethodParameter>()
@@ -49,8 +52,8 @@ namespace WPFApp
 
             var actions = new List<GlueRoutingMethod>()
             {
-                new GlueRoutingMethod("Accept", Description: "Accept", Parameters: paramaters),
-                new GlueRoutingMethod("Reject", Description: "Reject")
+                new GlueRoutingMethod("AcceptNotification", Description: "Accept", Parameters: paramaters),
+                new GlueRoutingMethod("RejectNotification", Description: "Reject")
             };
 
             var notifaction = new DesktopNotification(Title.Text,
@@ -59,11 +62,26 @@ namespace WPFApp
                 Description.Text,
                 "category",
                 "source",
-                "NotificationClickedHandler",              
+                "AcceptedHandler",              
                 actions
             );
 
             App.Glue.Notifications.Publish(notifaction);
+        }
+
+        public void AcceptNotification(string data)
+        {
+
+        }
+
+        public void Dispose()
+        {
+
+        }
+
+        public void RejectNotification(string data)
+        {
+
         }
     }
 }
