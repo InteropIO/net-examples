@@ -69,7 +69,7 @@ namespace WPFApp
             App.Glue.Notifications.Publish(notification);
         }
 
-        public void AcceptNotification(string data)
+        public void AcceptNotification(string customerId)
         {
 
         }
@@ -79,7 +79,7 @@ namespace WPFApp
 
         }
 
-        public void RejectNotification(string data)
+        public void RejectNotification(string customerId)
         {
 
         }

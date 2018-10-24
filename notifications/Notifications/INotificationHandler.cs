@@ -11,9 +11,9 @@ namespace WPFApp
     public interface INotificationHandler : IDisposable
     {
         [ServiceOperation(AsyncIfPossible = true, ExceptionSafe = true)]
-        void AcceptNotification(string data);
+        void AcceptNotification(string customerId);
 
         [ServiceOperation(AsyncIfPossible = true, ExceptionSafe = true)]
-        void RejectNotification(string data);
+        void RejectNotification(string customerId);
     }
 }
