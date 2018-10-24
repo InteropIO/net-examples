@@ -45,18 +45,18 @@ namespace WPFApp
       
         private void OnSendNotificationClick(object sender, RoutedEventArgs e)
         {
-            var paramaters = new List<GlueMethodParameter>()
+            var parameters = new List<GlueMethodParameter>()
             {
                 new GlueMethodParameter("customerId", new GnsValue("11"))
             };
 
             var actions = new List<GlueRoutingMethod>()
             {
-                new GlueRoutingMethod("AcceptNotification", Description: "Accept", Parameters: paramaters),
+                new GlueRoutingMethod("AcceptNotification", Description: "Accept", Parameters: parameters),
                 new GlueRoutingMethod("RejectNotification", Description: "Reject")
             };
 
-            var notifaction = new DesktopNotification(Title.Text,
+            var notification = new DesktopNotification(Title.Text,
                 NotificationSeverity.Low,
                 "type",
                 Description.Text,
@@ -66,7 +66,7 @@ namespace WPFApp
                 actions
             );
 
-            App.Glue.Notifications.Publish(notifaction);
+            App.Glue.Notifications.Publish(notification);
         }
 
         public void AcceptNotification(string data)
