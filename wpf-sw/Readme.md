@@ -1,0 +1,1 @@
+This is a minimalistic WPF example that register its main window as sticky. 

@@ -1,0 +1,33 @@
+﻿<Window x:Class="AppManagerDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:AppManagerDemo"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <TabControl>
+        <TabItem Header="Applications">
+            <Grid Margin="5">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition/>
+                    <ColumnDefinition/>
+                </Grid.ColumnDefinitions>
+                <DockPanel LastChildFill="True" Grid.Column="0" >
+                    <Button x:Name="startButton" Width="75" Height="25" DockPanel.Dock="Top" HorizontalAlignment="Left" Click="startButton_Click">Start</Button>
+                    <ListBox x:Name="applicationList" Margin="0,5,0,0"/>
+                </DockPanel>
+                <DockPanel LastChildFill="True" Grid.Column="1" Margin="5,0,0,0">
+                    <Button x:Name="stopButton" Width="75" Height="25" DockPanel.Dock="Top" HorizontalAlignment="Left" Click="stopButton_Click">Stop</Button>
+                    <ListBox x:Name="applicationInstanceList" Margin="0,5,0,0"/>
+                </DockPanel>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Layouts">
+            <DockPanel LastChildFill="True" Margin="5">
+                <Button x:Name="restoreButton" Width="75" Height="25" HorizontalAlignment="Left" DockPanel.Dock="Top" Click="restoreButton_Click">Restore</Button>
+                <ListBox x:Name="layoutList" Grid.Column="0" Margin="0,5,0,0" />
+            </DockPanel>
+        </TabItem>
+    </TabControl>
+</Window>
