@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DOT.Logging;
 using Tick42;
 using Tick42.AppManager;
 using Tick42.StickyWindows;
@@ -30,7 +31,7 @@ namespace AppManagerDemo
         public MainWindow()
         {
             InitializeComponent();
-            glue42_ = new Glue42();
+            glue42_ = new Glue42(LogLibrary.StaticLog4Net);
             glue42_.Initialize("AppManagerDemo");
 
             var swOptions = glue42_.StickyWindows?.GetStartupOptions() ?? new SwOptions();
@@ -153,21 +154,16 @@ namespace AppManagerDemo
             {
                 var context = AppManagerContext.CreateNew();
                 context.Set("startedFrom", Process.GetCurrentProcess().Id);
-                var innerObject = new AppManagerContextValues();
-                innerObject.Set("x", 600);
-                innerObject.Set("y", 600);
-                innerObject.Set("width", 500);
-                innerObject.Set("height", 500);
-                context.Set("bounds", innerObject);
                 var task = selectedApplication.Start(context);
                 task.ContinueWith(t =>
                 {
                     if (t.Status != TaskStatus.RanToCompletion)
                     {
-
+                        // Applcation failed to start
                     }
                     else
                     {
+                        // Started application instance
                         var instance = t.Result;
                     }
                 });
