@@ -97,9 +97,9 @@ namespace AdvancedImperativeInterop
             };
 
             var advancedOptions = new Glue42.AdvancedOptions {SynchronizationContext = synchronizationContext};
-
+            
             Glue.Initialize(
-                "AdvancedInteropObjectClients", // application name - required
+                Assembly.GetEntryAssembly().GetName().Name, // application name - required
                 useAgm: true,
                 useAppManager: true,
                 useMetrics: true,

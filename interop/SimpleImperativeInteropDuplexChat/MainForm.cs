@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -52,7 +53,7 @@ namespace SimpleImperativeInteropDuplexChat
                 }
             };
             Glue.Initialize(
-                "InteropDuplex", // application name - required
+                Assembly.GetEntryAssembly().GetName().Name, // application name - required
                 useAgm: true,
                 useAppManager: true,
                 useMetrics: true,

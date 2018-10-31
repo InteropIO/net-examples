@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -55,7 +56,7 @@ namespace SimpleDeclarativeInterop
             var advancedOptions = new Glue42.AdvancedOptions {SynchronizationContext = synchronizationContext};
 
             Glue.Initialize(
-                "AdvancedInteropObjectClients", // application name - required
+                Assembly.GetEntryAssembly().GetName().Name, // application name - required
                 useAgm: true,
                 useAppManager: true,
                 useMetrics: true,

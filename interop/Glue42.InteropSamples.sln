@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedImperativeInterop",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleDeclarativeInterop", "SimpleDeclarativeInterop\SimpleDeclarativeInterop.csproj", "{34237B10-41A9-40E5-AFDD-2E403A4028BC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AdvancedDeclarativeInterop", "AdvancedDeclarativeInterop\AdvancedDeclarativeInterop.csproj", "{AF71E9A9-3C5A-4A2C-82FA-03819D59B211}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{34237B10-41A9-40E5-AFDD-2E403A4028BC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{34237B10-41A9-40E5-AFDD-2E403A4028BC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34237B10-41A9-40E5-AFDD-2E403A4028BC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF71E9A9-3C5A-4A2C-82FA-03819D59B211}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF71E9A9-3C5A-4A2C-82FA-03819D59B211}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF71E9A9-3C5A-4A2C-82FA-03819D59B211}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF71E9A9-3C5A-4A2C-82FA-03819D59B211}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -44,6 +50,7 @@ Global
 		{C6327ACF-8B13-4518-972B-DD0082316469} = {38590355-A51F-482A-9F3E-6D698A56FAD1}
 		{57F629B6-98E2-46EB-81D6-CA100284A747} = {38590355-A51F-482A-9F3E-6D698A56FAD1}
 		{34237B10-41A9-40E5-AFDD-2E403A4028BC} = {38590355-A51F-482A-9F3E-6D698A56FAD1}
+		{AF71E9A9-3C5A-4A2C-82FA-03819D59B211} = {38590355-A51F-482A-9F3E-6D698A56FAD1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7F282178-851D-4288-BEC4-AA1D15633126}
