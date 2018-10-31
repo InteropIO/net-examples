@@ -109,8 +109,7 @@ namespace AdvancedDeclarativeInterop
 
             Log($"Normal work of {nameof(IServiceContract.TestAGMOptions)} {s}");
         }
-
-
+        
         protected override void OnShown(EventArgs e)
         {
             SynchronizationContext synchronizationContext = SynchronizationContext.Current;

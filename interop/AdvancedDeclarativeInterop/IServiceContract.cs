@@ -35,9 +35,13 @@ namespace AdvancedDeclarativeInterop
         void CheckAsyncClientMethodResult(ref int someInt,
             [ServiceOperationResultHandler] Action<IClientMethodResult> handleClientMethodResult);
 
+        // we can require object type restriction
+        // we can require method match to be full - so same named method won't work unless it has whole definition matched
         [ServiceOperation(ObjectTypeRestrictions = new[] {"Instrument"}, MethodMatch = MethodMatch.Full)]
+        // set the returning field
         [return: ServiceOperationField(IgnoreInSignature = false, Name = "response")]
         CompositeType SetCurrentInstrument(
+            // we can set each operation field's name
             [ServiceOperationField(Description = "list of symbol name types")]
             string[] symbolNames,
             [ServiceOperationField(Description = "symbol Type for InstrumentDefaultName")]
@@ -52,11 +56,13 @@ namespace AdvancedDeclarativeInterop
             out DateTime dt,
             out CompositeType outResponse);
 
+        // use custom serializer
         [ServiceOperation(MethodMatch = MethodMatch.Full)]
         [return: ServiceOperationField(AgmObjectSerializerType = typeof(RectangleSerializer))]
         Rectangle Offset([ServiceOperationField(AgmObjectSerializerType = typeof(RectangleSerializer))]
             Rectangle rect, int x, int y);
 
+        // unwrap composite object
         [ServiceOperation(UnwrapCompositeReturnParameter = true)]
         UnwrappedComposite GetUnwrapped(string csv, int x);
 
