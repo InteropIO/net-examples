@@ -23,7 +23,6 @@ namespace WPFApp
 
             Glue = new Glue42();
             Glue.Initialize("MyDemo");
-            
         }
     }
 }
