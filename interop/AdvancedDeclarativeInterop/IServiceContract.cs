@@ -22,7 +22,7 @@ namespace AdvancedDeclarativeInterop
     public interface IServiceContract : IDisposable
     {
         [ServiceOperation]
-        void ShowClient(T42Contact contact, [AGMServiceOptions] IServiceOptions serviceOption);
+        void ShowClients(T42Contact[] contacts, [AGMServiceOptions] IServiceOptions serviceOption);
 
         // asynchronously handle the result
         [ServiceOperation(AsyncIfPossible = true, ExceptionSafe = true)]

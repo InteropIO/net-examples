@@ -29,9 +29,9 @@ namespace AdvancedDeclarativeInterop
 
         public Glue42 Glue { get; private set; }
 
-        void IServiceContract.ShowClient(T42Contact contact, IServiceOptions serviceOption)
+        void IServiceContract.ShowClients(T42Contact[] contacts, IServiceOptions serviceOption)
         {
-            Log($"Show contact {contact}");
+            Log($"Show contacts: {contacts.AsString(c => c.Name.FirstName)}");
         }
 
         void IServiceContract.GetState(Action<ClientPortfolioDemoState> handleResult)
@@ -193,16 +193,22 @@ namespace AdvancedDeclarativeInterop
         private void BtnInvokeClick(object sender, EventArgs e)
         {
             invokeCount_++;
-            var contact = new T42Contact
-            {
-                Name = new T42Name {FirstName = "Joe", LastName = "Smith"}
-            };
 
             // intercepting the result
-            service_.ShowClient(contact, new ServiceOptions(
+            service_.ShowClients(new[]
+            {
+                new T42Contact
+                {
+                    Name = new T42Name {FirstName = "Joe", LastName = "Smith"}
+                },
+                new T42Contact
+                {
+                    Name = new T42Name {FirstName = "Jane", LastName = "Doe"}
+                }
+            }, new ServiceOptions(
                 (so, invocation, cmr, ex) =>
                 {
-                    Log($"{nameof(service_.ShowClient)} of {contact.Name} completed with {cmr} : {ex}");
+                    Log($"{nameof(service_.ShowClients)} completed with {cmr} : {ex}");
                     if (cmr == null || cmr.Status != MethodInvocationStatus.Succeeded || ex != null)
                     {
                         Log("Cannot show client due to " +
