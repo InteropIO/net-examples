@@ -83,6 +83,12 @@ namespace HelloGlue42Interop
 
         private static void InvocationResultHandler(Task<IClientMethodResult> invocationResult)
         {
+            if (invocationResult.IsFaulted)
+            {
+                Log($"Invocation failed with {invocationResult.Exception?.Flatten()}");
+                return;
+            }
+
             IClientMethodResult cmr = invocationResult.Result;
             Log($"Invoked: {invocationResult.Status} - {cmr.Status} - {cmr.ResultMessage}");
         }

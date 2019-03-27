@@ -120,7 +120,11 @@ namespace SimpleImperativeInteropDuplexChat
                     r =>
                     {
                         // consume the result
-
+                        if (r.IsFaulted)
+                        {
+                            Log($"Invocation failed with {r.Exception?.Flatten()}");
+                            return;
+                        }
                         IClientMethodResult result = r.Result;
 
                         // since we're sending an 'All' call, we have to check the inner results (per target)

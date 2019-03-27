@@ -203,6 +203,12 @@ namespace AdvancedImperativeInterop
                         instance.InstanceId == target.InstanceId))
                 .ContinueWith(cmrT =>
                 {
+                    if (cmrT.IsFaulted)
+                    {
+                        Log($"Invocation failed with {cmrT.Exception?.Flatten()}");
+                        return;
+                    }
+
                     IClientMethodResult cmr = cmrT.Result;
                     Log(
                         $"Server said {cmr.ResultMessage} with transactionId = {cmr.ResultContext.GetValueByName("transactionId", v => v.AsString)}");
