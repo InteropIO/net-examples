@@ -23,11 +23,5 @@
                 </DockPanel>
             </Grid>
         </TabItem>
-        <TabItem Header="Layouts">
-            <DockPanel LastChildFill="True" Margin="5">
-                <Button x:Name="restoreButton" Width="75" Height="25" HorizontalAlignment="Left" DockPanel.Dock="Top" Click="restoreButton_Click">Restore</Button>
-                <ListBox x:Name="layoutList" Grid.Column="0" Margin="0,5,0,0" />
-            </DockPanel>
-        </TabItem>
     </TabControl>
 </Window>

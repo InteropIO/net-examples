@@ -47,8 +47,6 @@ namespace AppManagerDemo
                 appManager.ApplicationRemoved += OnApplicationRemoved;
                 appManager.ApplicationInstanceStarted += OnApplicationInstanceStarted;
                 appManager.ApplicationInstanceStopped += OnApplicationInstanceStopped;
-                appManager.LayoutAdded += OnLayoutAdded;
-                appManager.LayoutRemoved += OnLayoutRemoved;
             }
         }
 
@@ -90,16 +88,6 @@ namespace AppManagerDemo
             ExecuteAction(() => { OnApplicationInstanceStopped(e.Instance); });
         }
 
-        private void OnLayoutAdded(object sender, AppManagerLayoutEventArgs e)
-        {
-            ExecuteAction(() => { OnLayoutAdded(e.Layout); });
-        }
-
-        private void OnLayoutRemoved(object sender, AppManagerLayoutEventArgs e)
-        {
-            ExecuteAction(() => { OnLayoutRemoved(e.Layout); });
-        }
-
         private void OnApplicationAdded(IAppManagerApplication application)
         {
             applicationList.Items.Add(application);
@@ -123,16 +111,6 @@ namespace AppManagerDemo
         private void OnApplicationInstanceStopped(IAppManagerApplicationInstance instance)
         {
             applicationInstanceList.Items.Remove(instance);
-        }
-
-        private void OnLayoutAdded(IAppManagerLayout layout)
-        {
-            layoutList.Items.Add(layout);
-        }
-
-        private void OnLayoutRemoved(IAppManagerLayout layout)
-        {
-            layoutList.Items.Remove(layout);
         }
 
         private void ExecuteAction(Action action)
@@ -176,15 +154,6 @@ namespace AppManagerDemo
             if (selectedApplicationInstance != null)
             {
                 selectedApplicationInstance.Stop();
-            }
-        }
-
-        private void restoreButton_Click(object sender, RoutedEventArgs e)
-        {
-            var selectedLayout = layoutList.SelectedItem as IAppManagerLayout;
-            if (selectedLayout != null)
-            {
-                selectedLayout.Restore(null);
             }
         }
     }
