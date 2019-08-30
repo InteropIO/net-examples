@@ -310,3 +310,7 @@ Output
 *.log
 *.linkImport
 *.linkImport.sln
+
+#unignore the pdb in lib dirs
+!/**/lib/*.pdb
+
