@@ -5,14 +5,17 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WPFApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="WPF Glue Windows Sample" Height="450" Width="800">
     <Grid>
-        <DockPanel>
-
-            <TextBlock DockPanel.Dock="Top">Some Data to be displayed in the window</TextBlock>
-            <TextBlock DockPanel.Dock="Bottom" TextAlignment="Right">@Copyright 2018</TextBlock>
-
-        </DockPanel>
+        <StackPanel Orientation="Vertical" Margin="5">
+            <TextBlock>Test one of the windows features provided below:</TextBlock>
+            <StackPanel Margin="0,5,0,0">
+                <Button Width="90" HorizontalAlignment="Left" Click="HideButton_Click">Hide for 5s</Button>
+                <Button Width="90" HorizontalAlignment="Left" Margin="0,5,0,0" Click="TitleButton_Click">Change Title</Button>
+                <Button Width="90" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ToggleChannelButton_Click">Toggle Channel</Button>
+                <Button Width="90" HorizontalAlignment="Left" Margin="0,5,0,0" Click="ChangeChannelButton_Click">Change Channel</Button>
+            </StackPanel>
+        </StackPanel>
 
     </Grid>
 </Window>
