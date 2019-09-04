@@ -104,7 +104,7 @@ namespace AdvancedImperativeInterop
                 useAppManager: true,
                 useMetrics: true,
                 useContexts: false,
-                useStickyWindows: false,
+                useGlueWindows: false,
                 credentials: Tuple.Create(GlueUsername, ""),
                 advancedOptions: advancedOptions);
 

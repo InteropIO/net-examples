@@ -15,7 +15,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Tick42;
 using Tick42.Contexts;
-using Tick42.StickyWindows;
+using Tick42.Windows;
 
 namespace WPFApp
 {
@@ -28,12 +28,12 @@ namespace WPFApp
         {
             InitializeComponent();
 
-            var swOptions = App.Glue.StickyWindows?.GetStartupOptions() ?? new SwOptions();
-            swOptions.WithType(SwWindowType.Tab);
-            swOptions.WithTitle("Example Window");
+            var gwOptions = App.Glue.GlueWindows?.GetStartupOptions() ?? new GlueWindowOptions();
+            gwOptions.WithType(GlueWindowType.Tab);
+            gwOptions.WithTitle("Example Window");
 
             // register the window 
-            App.Glue.StickyWindows?.RegisterWindow(this, swOptions);
+            App.Glue.GlueWindows?.RegisterWindow(this, gwOptions);
         }
     }
 }

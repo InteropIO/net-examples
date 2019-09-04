@@ -44,7 +44,7 @@ namespace HelloGlue42Interop
                 useAppManager: true,
                 useMetrics: true,
                 useContexts: false,
-                useStickyWindows: false,
+                useGlueWindows: false,
                 credentials: Tuple.Create(glueUserName, ""));
 
             // Register synchronous calling endpoint, called HelloGlue.

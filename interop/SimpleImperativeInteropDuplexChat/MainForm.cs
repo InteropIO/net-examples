@@ -58,7 +58,7 @@ namespace SimpleImperativeInteropDuplexChat
                 useAppManager: true,
                 useMetrics: true,
                 useContexts: false,
-                useStickyWindows: false,
+                useGlueWindows: false,
                 credentials: Tuple.Create(GlueUsername, ""));
 
             Glue.Interop.RegisterEndpoint(mdb => mdb.SetMethodName(chatEndpointName_),

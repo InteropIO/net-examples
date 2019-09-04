@@ -36,7 +36,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Glue42">
-      <HintPath>..\lib\Glue42.dll</HintPath>
+      <HintPath>..\..\lib\Glue42.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
