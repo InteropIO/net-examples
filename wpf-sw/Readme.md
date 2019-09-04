@@ -1,1 +1,1 @@
-This is a minimalistic WPF example that register its main window as sticky. 
+This is a minimalistic WPF example that register its main window as sticky using Glue windowing API. 
