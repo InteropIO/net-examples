@@ -6,4 +6,4 @@ This repo contains several .NET examples for using Glue42 APIs:
 * App management example - using app management API (*app-management-demo* subfolder)
 * Interop examples - shows how imperative and declarative Glue42 interop is used
 
-All projects refence Glue42.dll from *lib* folder.
+All projects use Glue42.NET library from public NuGet repository.
