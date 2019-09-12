@@ -48,7 +48,7 @@ namespace GlueStreamPublisher
             // give the publisher an application name
             // explicitly turn off Glue Window management, Glue contexts, Glue AppManager, Glue metrics and Glue notifications
             // as they're not used in this example
-            glue_.Initialize("GlueStreamsPublisher", useAppManager: false, useStickyWindows: false,
+            glue_.Initialize("GlueStreamsPublisher", useAppManager: false, useGlueWindows: false,
                 useContexts: false, useMetrics: false, useNotifications: false);
 
             // detect connection status change and log it to the UI

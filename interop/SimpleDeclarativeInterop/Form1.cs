@@ -61,7 +61,7 @@ namespace SimpleDeclarativeInterop
                 useAppManager: true,
                 useMetrics: true,
                 useContexts: false,
-                useStickyWindows: false,
+                useGlueWindows: false,
                 credentials: Tuple.Create(glueUser, ""),
                 advancedOptions: advancedOptions);
 

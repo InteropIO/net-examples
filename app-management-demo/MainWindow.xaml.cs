@@ -17,7 +17,7 @@ using System.Windows.Shapes;
 using DOT.Logging;
 using Tick42;
 using Tick42.AppManager;
-using Tick42.StickyWindows;
+using Tick42.Windows;
 
 namespace AppManagerDemo
 {
@@ -34,10 +34,10 @@ namespace AppManagerDemo
             glue42_ = new Glue42(LogLibrary.StaticLog4Net);
             glue42_.Initialize("AppManagerDemo");
 
-            var swOptions = glue42_.StickyWindows?.GetStartupOptions() ?? new SwOptions();
-            swOptions.WithType(SwWindowType.Flat);
-            swOptions.WithTitle("AppManager Demo");
-            glue42_.StickyWindows?.RegisterWindow(this, swOptions);
+            var gwOptions = glue42_.GlueWindows?.GetStartupOptions() ?? new GlueWindowOptions();
+            gwOptions.WithType(GlueWindowType.Flat);
+            gwOptions.WithTitle("AppManager Demo");
+            glue42_.GlueWindows?.RegisterWindow(this, gwOptions);
 
             var appManager = glue42_.AppManager;
             if (appManager != null)

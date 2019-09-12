@@ -1,18 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29215.179
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.168
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlueStreamPublisher", "GlueStreamPublisher\GlueStreamPublisher.csproj", "{0DBDABA5-6A17-4C1C-BE78-48903C0549DD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlueStreamSubscriber", "GlueStreamSubscriber\GlueStreamSubscriber.csproj", "{7622F805-1ECE-4EE5-8CA7-5E0A8A1991FA}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{E792ECAE-4CFF-4285-BA47-8E3A58F192A1}"
-	ProjectSection(SolutionItems) = preProject
-		lib\Glue42.dll = lib\Glue42.dll
-		lib\Glue42.pdb = lib\Glue42.pdb
-		lib\Glue42.xml = lib\Glue42.xml
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8903F875-637F-405A-B5A9-E46067DF3C32}"
 	ProjectSection(SolutionItems) = preProject
