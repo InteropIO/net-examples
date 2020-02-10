@@ -85,7 +85,7 @@ namespace GlueStreamSubscriber
                     $"{endpoint.Definition.Name} is {args.EndpointStatus} from {endpoint.OriginalServer} - subscribing with {rndTickMode}");
 
                 // reject 1 of every 3
-                bool reject = random_.Next(2) == 0;
+                bool reject = random_.Next(3) == 0;
 
                 // send a subscription request to that streaming endpoint
                 // the Subscribe method has multiple overloads, so e.g. you can subscribe to 'Best' target of a streaming endpoint specified by its Name
