@@ -11,9 +11,16 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
-        <ListView Name="Subscriptions" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="2, 2, 2, 2" />
+        <ListView Name="ListViewSubscriptions" Grid.Row="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="2, 2, 2, 2" />
         <GridSplitter ResizeDirection="Rows" Width="Auto" Height="3" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <ListView Name="Log" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="2, 2, 2, 2"/>
+        <ListView Name="ListViewLogs" Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Margin="2, 2, 2, 2"/>
+        <Border BorderBrush="Gray" BorderThickness="1" Grid.Row="3">
+            <StackPanel Orientation="Horizontal" Background="{Binding Path=ConnectionStatusColor}">
+                <TextBlock VerticalAlignment="Center">Glue connection status:</TextBlock>
+                <TextBlock VerticalAlignment="Center" Text="{Binding Path=ConnectionStatusDescription}"  Margin="5,0,0,0" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>
