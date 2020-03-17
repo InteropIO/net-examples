@@ -6,7 +6,22 @@
         xmlns:local="clr-namespace:WPFApp"
         mc:Ignorable="d"
         Title="MainWindow" Height="220" Width="300">
-    <Grid Margin="10">
+    
+    <Window.Resources>
+        
+        <Style TargetType="{x:Type FrameworkElement}" x:Key="ControlMargin" >
+            <Setter Property="Margin" Value="5,5,5,5"/>
+        </Style>
+        <Style TargetType="{x:Type Button}" x:Key="ButtonStyle" BasedOn="{StaticResource ControlMargin}" >
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="HorizontalAlignment" Value="Right"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+            <Setter Property="Width" Value="100"/>
+        </Style>
+    </Window.Resources>
+    
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="*"/>
@@ -15,15 +30,29 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="20"/>
         </Grid.RowDefinitions>
-        <TextBlock Margin="5" Grid.Row="0" Grid.Column="0">Title</TextBlock>
-        <TextBlock Margin="5" Grid.Row="1" Grid.Column="0">Description</TextBlock>
-
-        <TextBox Margin="5" Grid.Row="0" Grid.Column="1" x:Name="Title" Text="Title"/>
-        <TextBox Margin="5" Grid.Row="1" Grid.Column="1" x:Name="Description" Text="Description"/>
+        <TextBlock Style="{StaticResource ControlMargin}" Grid.Row="0" Grid.Column="0">Title</TextBlock>
+        <TextBlock Style="{StaticResource ControlMargin}" Grid.Row="1" Grid.Column="0">Description</TextBlock>
+        <TextBlock Style="{StaticResource ControlMargin}" Grid.Row="2" Grid.Column="0">Severity</TextBlock>
         
-        <Button Margin="20,20,0,20" Grid.Row="3" Grid.Column="1" Click="OnSendNotificationClick">Notify</Button>
-        
+        <TextBox Style="{StaticResource ControlMargin}" Grid.Row="0" Grid.Column="1" x:Name="Title" Text="Title"/>
+        <TextBox Style="{StaticResource ControlMargin}" Grid.Row="1" Grid.Column="1" x:Name="Description" Text="Description"/>
+        <ComboBox Style="{StaticResource ControlMargin}" Grid.Row="2" Grid.Column="1" x:Name="Severity">
+            <ComboBoxItem IsSelected="True">Low</ComboBoxItem>
+            <ComboBoxItem>Medium</ComboBoxItem>
+            <ComboBoxItem>High</ComboBoxItem>
+            <ComboBoxItem>Critical</ComboBoxItem>
+        </ComboBox>
+        <Button Style="{StaticResource ButtonStyle}" Grid.Row="3" Grid.Column="1" x:Name="ButtonNotify" Click="OnSendNotificationClick">Notify</Button>
+       
+        <Border BorderBrush="Gray" BorderThickness="1" Grid.Row="4" Grid.ColumnSpan="2">
+            <StackPanel Orientation="Horizontal" Background="{Binding Path=ConnectionStatusColor}">
+                <TextBlock VerticalAlignment="Center">Glue connection status:</TextBlock>
+                <TextBlock VerticalAlignment="Center" Text="{Binding Path=ConnectionStatusDescription}"  Margin="5,0,0,0" />
+            </StackPanel>
+        </Border>
         
     </Grid>
 </Window>
