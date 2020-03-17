@@ -9,18 +9,28 @@
     <TabControl>
         <TabItem Header="Applications">
             <Grid Margin="5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"></RowDefinition>
+                    <RowDefinition Height="20"></RowDefinition>
+                </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition/>
                     <ColumnDefinition/>
                 </Grid.ColumnDefinitions>
-                <DockPanel LastChildFill="True" Grid.Column="0" >
+                <DockPanel LastChildFill="True" Grid.Column="0" Grid.Row="0" >
                     <Button x:Name="startButton" Width="75" Height="25" DockPanel.Dock="Top" HorizontalAlignment="Left" Click="startButton_Click">Start</Button>
                     <ListBox x:Name="applicationList" Margin="0,5,0,0"/>
                 </DockPanel>
-                <DockPanel LastChildFill="True" Grid.Column="1" Margin="5,0,0,0">
+                <DockPanel LastChildFill="True" Grid.Column="1" Grid.Row="0" Margin="5,0,0,0">
                     <Button x:Name="stopButton" Width="75" Height="25" DockPanel.Dock="Top" HorizontalAlignment="Left" Click="stopButton_Click">Stop</Button>
                     <ListBox x:Name="applicationInstanceList" Margin="0,5,0,0"/>
                 </DockPanel>
+                <Border BorderBrush="Gray" BorderThickness="1" Grid.Row="1" Grid.ColumnSpan="2">
+                    <StackPanel Orientation="Horizontal" Background="{Binding Path=ConnectionStatusColor}">
+                        <TextBlock VerticalAlignment="Center">Glue connection status:</TextBlock>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding Path=ConnectionStatusDescription}"  Margin="5,0,0,0" />
+                    </StackPanel>
+                </Border>
             </Grid>
         </TabItem>
     </TabControl>

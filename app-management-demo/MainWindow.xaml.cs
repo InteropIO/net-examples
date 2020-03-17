@@ -26,20 +26,65 @@ namespace AppManagerDemo
     /// </summary>
     public partial class MainWindow : Window
     {
-        private Glue42 glue42_;
+        #region Dependency Properties
+
+        public static readonly DependencyProperty ConnectionStatusDescriptionProperty = DependencyProperty.Register("ConnectionStatusDescription", typeof(string), typeof(MainWindow));
+        public static readonly DependencyProperty ConnectionStatusColorProperty = DependencyProperty.Register("ConnectionStatusColor", typeof(Brush), typeof(MainWindow));
+
+        public string ConnectionStatusDescription
+        {
+            get
+            {
+                return GetValue(ConnectionStatusDescriptionProperty).ToString();
+            }
+            set
+            {
+                SetValue(ConnectionStatusDescriptionProperty, value);
+            }
+        }
+
+        public Brush ConnectionStatusColor
+        {
+            get
+            {
+                return (Brush)GetValue(ConnectionStatusColorProperty);
+            }
+            set
+            {
+                SetValue(ConnectionStatusColorProperty, value);
+            }
+        }
+
+        #endregion
+
+        private Glue42 _glue;
 
         public MainWindow()
         {
             InitializeComponent();
-            glue42_ = new Glue42(LogLibrary.StaticLog4Net);
-            glue42_.Initialize("AppManagerDemo");
+            DataContext = this;
+            Visibility = Visibility.Hidden;
+            UpdateUI(false);
+        }
 
-            var gwOptions = glue42_.GlueWindows?.GetStartupOptions() ?? new GlueWindowOptions();
+        internal void RegisterGlue(Glue42 glue)
+        {
+            _glue = glue;
+            UpdateUI(true);
+
+            //bounds are optional. With them we will just set initial placement of the application
+            var defaultBounds = new GlueWindowBounds()
+            {
+                X = (int)((SystemParameters.PrimaryScreenWidth / 2) - (Width / 2)),
+                Y = (int)((SystemParameters.PrimaryScreenHeight / 2) - (Height / 2)),
+                Width = (int)Width,
+                Height = (int)Height
+            };
+            var gwOptions = glue.GetStartupWindowOptions("AppManager Demo", defaultBounds);
             gwOptions.WithType(GlueWindowType.Flat);
-            gwOptions.WithTitle("AppManager Demo");
-            glue42_.GlueWindows?.RegisterWindow(this, gwOptions);
+            glue.GlueWindows?.RegisterWindow(this, gwOptions);
 
-            var appManager = glue42_.AppManager;
+            var appManager = glue.AppManager;
             if (appManager != null)
             {
                 appManager.ApplicationAdded += OnApplicationAdded;
@@ -52,9 +97,9 @@ namespace AppManagerDemo
 
         protected override void OnClosed(EventArgs e)
         {
-            var appManager = glue42_.AppManager;
-            if (appManager != null)
+            if (_glue != null && _glue.AppManager != null)
             {
+                var appManager = _glue.AppManager;
                 appManager.ApplicationAdded -= OnApplicationAdded;
                 appManager.ApplicationRemoved -= OnApplicationRemoved;
                 appManager.ApplicationInstanceStarted -= OnApplicationInstanceStarted;
@@ -63,67 +108,38 @@ namespace AppManagerDemo
             base.OnClosed(e);
         }
 
+        #region Applications
+
         private void OnApplicationAdded(object sender, AppManagerApplicationEventArgs e)
         {
-            ExecuteAction(() => { OnApplicationAdded(e.Application); });
+            ExecuteAction(() => { applicationList.Items.Add(e.Application); });
         }
 
         private void OnApplicationUpdated(object sender, AppManagerApplicationEventArgs e)
         {
-            ExecuteAction(() => { OnApplicationUpdated(e.Application); });
+            ExecuteAction(() => { applicationList.Items.Refresh(); });
         }
 
         private void OnApplicationRemoved(object sender, AppManagerApplicationEventArgs e)
         {
-            ExecuteAction(() => { OnApplicationRemoved(e.Application); });
+            ExecuteAction(() => { applicationList.Items.Remove(e.Application); });
         }
+
+        #endregion
+
+        #region Instances
 
         private void OnApplicationInstanceStarted(object sender, AppManagerApplicationInstanceEventArgs e)
         {
-            ExecuteAction(() => { OnApplicationInstanceStarted(e.Instance); });
+            ExecuteAction(() => { applicationInstanceList.Items.Add(e.Instance); });
         }
 
         private void OnApplicationInstanceStopped(object sender, AppManagerApplicationInstanceEventArgs e)
         {
-            ExecuteAction(() => { OnApplicationInstanceStopped(e.Instance); });
+            ExecuteAction(() => { applicationInstanceList.Items.Remove(e.Instance); });
         }
 
-        private void OnApplicationAdded(IAppManagerApplication application)
-        {
-            applicationList.Items.Add(application);
-        }
-
-        private void OnApplicationUpdated(IAppManagerApplication application)
-        {
-            applicationList.Items.Refresh();
-        }
-
-        private void OnApplicationRemoved(IAppManagerApplication application)
-        {
-            applicationList.Items.Remove(application);
-        }
-
-        private void OnApplicationInstanceStarted(IAppManagerApplicationInstance instance)
-        {
-            applicationInstanceList.Items.Add(instance);
-        }
-
-        private void OnApplicationInstanceStopped(IAppManagerApplicationInstance instance)
-        {
-            applicationInstanceList.Items.Remove(instance);
-        }
-
-        private void ExecuteAction(Action action)
-        {
-            if (!CheckAccess())
-            {
-                Dispatcher.BeginInvoke(action, null);
-            }
-            else
-            {
-                action();
-            }
-        }
+        #endregion
 
         private void startButton_Click(object sender, RoutedEventArgs e)
         {
@@ -155,6 +171,32 @@ namespace AppManagerDemo
             {
                 selectedApplicationInstance.Stop();
             }
+        }
+
+        private void ExecuteAction(Action action)
+        {
+            if (!CheckAccess())
+            {
+                Dispatcher.BeginInvoke(action, null);
+            }
+            else
+            {
+                action();
+            }
+        }
+
+        private void UpdateUI(bool isConnected)
+        {
+            var statusMessage = isConnected ? "Connected" : "Disconnected";
+            var statusColor = isConnected ? Colors.LightGreen : Colors.LightPink;
+
+            ConnectionStatusDescription = statusMessage;
+            ConnectionStatusColor = new SolidColorBrush(statusColor);
+
+            startButton.IsEnabled = isConnected;
+            stopButton.IsEnabled = isConnected;
+            applicationList.IsEnabled = isConnected;
+            applicationInstanceList.IsEnabled = isConnected;
         }
     }
 }
