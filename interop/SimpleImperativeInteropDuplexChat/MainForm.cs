@@ -8,84 +8,83 @@ using DOT.AGM;
 using DOT.AGM.Client;
 using DOT.AGM.Extensions;
 using Tick42;
+using Tick42.StartingContext;
 
 namespace SimpleImperativeInteropDuplexChat
 {
     public partial class MainForm : Form
     {
-        private readonly string chatEndpointName_ = "SendSimpleTextMessage";
+        private readonly string _chatEndpointName = "SendSimpleTextMessage";
+        public Glue42 _glue42;
 
         public MainForm()
         {
             InitializeComponent();
+            InitializeGlue();
         }
-
-        public string GlueUsername { get; set; }
-
-        public Glue42 Glue { get; set; }
 
         private void InitializeGlue()
         {
-            // initialize Tick42 Interop (AGM) and Metrics components
-
+            // initialize Tick42 Interop
             Log("Initializing Glue42");
-            GlueUsername = Environment.UserName;
-            Log($"User is {GlueUsername}");
 
-            // these envvars are expanded in some configuration files
-            Environment.SetEnvironmentVariable("PROCESSID", Process.GetCurrentProcess().Id + "");
-            Environment.SetEnvironmentVariable("GW_USERNAME", GlueUsername);
-            //Environment.SetEnvironmentVariable("DEMO_MODE", Mode + "");
-
-            // The Glue42 facade provides a simplified programming
-            // interface over the core Glue42 components.
-            Glue = new Glue42();
-
-            Glue.Interop.ConnectionStatusChanged += (sender, args) => { Log($"Glue connection is now {args.Status}"); };
-            Glue.Interop.EndpointStatusChanged += (sender, args) =>
+            var initializeOptions = new InitializeOptions()
             {
-                if (string.Equals(args.InteropEndpoint.Definition.Name, chatEndpointName_,
-                    StringComparison.CurrentCultureIgnoreCase))
-                {
-                    string status = args.InteropEndpoint.IsValid ? "+++ Discovered" : "--- Disappeared";
-
-                    Log($"{status} duplex chat instance {args.InteropEndpoint.OriginalServer}");
-                }
+                ApplicationName = "Hello Glue42 Imperative Duplex Chat",
+                InitializeTimeout = TimeSpan.FromSeconds(5)
             };
-            Glue.Initialize(
-                Assembly.GetEntryAssembly().GetName().Name, // application name - required
-                useAgm: true,
-                useAppManager: true,
-                useMetrics: true,
-                useContexts: false,
-                useGlueWindows: false,
-                credentials: Tuple.Create(GlueUsername, ""));
 
-            Glue.Interop.RegisterEndpoint(mdb => mdb.SetMethodName(chatEndpointName_),
-                (method, context, caller, resultBuilder, asyncResponseCallback, cookie) =>
-                    ThreadPool.QueueUserWorkItem(_ =>
+            Glue42.InitializeGlue(initializeOptions)
+                .ContinueWith((glue) =>
+                {
+                    //unable to register glue
+                    if (glue.Status == TaskStatus.Faulted)
                     {
-                        // simulate asynchronous work
-                        // grab the invocation context (e.g. take "id" from the input arguments)
-                        // we don't care about the id type, so get it as Value
-                        Value id = context.Arguments.GetValueByName("id", v => v);
-                        // we care about the message type - we take it as a string
-                        var message = context.Arguments.GetValueByName("message", v => v.AsString);
-                        Log($"Call from {caller} with id {id}: {message}");
+                        Log("Unable to initialize Glue42");
+                        return;
+                    }
 
-                        // do slow job here with context and caller
-                        Thread.Sleep(500);
+                    _glue42 = glue.Result;
 
-                        // respond when ready
-                        asyncResponseCallback(resultBuilder.SetMessage(id + " processed")
-                            .SetContext(cb => cb.AddValue("id", id)).Build());
-                    }));
+                    // subscribe to interop connection status event
+                    _glue42.Interop.ConnectionStatusChanged += (sender, args) => { Log($"Glue connection is now {args.Status}"); };
+                    _glue42.Interop.EndpointStatusChanged += InteropEndpointStatusChanged;
 
-            Log("Initialized Glue Metrics and AGM");
+                    _glue42.Interop.RegisterEndpoint(mdb => mdb.SetMethodName(_chatEndpointName),
+                         (method, context, caller, resultBuilder, asyncResponseCallback, cookie) =>
+                             ThreadPool.QueueUserWorkItem(_ =>
+                             {
+                                // simulate asynchronous work
+                                // grab the invocation context (e.g. take "id" from the input arguments)
+                                // we don't care about the id type, so get it as Value
+                                Value id = context.Arguments.GetValueByName("id", v => v);
+                                // we care about the message type - we take it as a string
+                                var message = context.Arguments.GetValueByName("message", v => v.AsString);
+                                Log($"Call from {caller} with id {id}: {message}");
 
-            //Glue.Metrics.TrackUserJourneyMetrics(this, trackWindows: true, trackClicks: true);
+                                // do slow job here with context and caller
+                                Thread.Sleep(500);
 
-            Log("Initialized Glue");
+                                // respond when ready
+                                asyncResponseCallback(resultBuilder.SetMessage(id + " processed")
+                                     .SetContext(cb => cb.AddValue("id", id)).Build());
+                             }));
+
+                    //Enable textbox for send of messages
+                    BeginInvoke((Action)(() => txtMsg_.Enabled = true));
+
+                    Log("Initialized Glue.");
+                });
+        }
+
+        private void InteropEndpointStatusChanged(object sender, InteropEndpointStatusChangedEventArgs e)
+        {
+            if (string.Equals(e.InteropEndpoint.Definition.Name, _chatEndpointName, StringComparison.CurrentCultureIgnoreCase))
+            {
+                string status = e.InteropEndpoint.IsValid ? "+++ Discovered" : "--- Disappeared";
+
+                Log($"{status} duplex chat instance {e.InteropEndpoint.OriginalServer}");
+            }
         }
 
         private void TxtMsgKeyDown(object sender, KeyEventArgs e)
@@ -101,8 +100,7 @@ namespace SimpleImperativeInteropDuplexChat
         private void SendMessage(string message)
         {
             // send a call to all targets that implement that endpoint, passing some id and the message.
-
-            Glue.Interop.Invoke(chatEndpointName_, mib => mib
+            _glue42.Interop.Invoke(_chatEndpointName, mib => mib
                         // set the invocation context (any arguments to be sent over to the targets)
                         .SetContext(cb => cb
                             // e.g. we can add some id
@@ -146,22 +144,6 @@ namespace SimpleImperativeInteropDuplexChat
             }
 
             txtLog_.AppendText(logMessage + "\r\n");
-        }
-
-        private void MainFormShown(object sender, EventArgs e)
-        {
-            Task.Run(() =>
-            {
-                try
-                {
-                    InitializeGlue();
-                }
-                catch (Exception exception)
-                {
-                    Log("Failed initializing Glue");
-                    Log(exception.ToString());
-                }
-            });
         }
     }
 }

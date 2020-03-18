@@ -45,6 +45,7 @@
             // 
             // btnRegister
             // 
+            this.btnRegister.Enabled = false;
             this.btnRegister.Location = new System.Drawing.Point(13, 13);
             this.btnRegister.Name = "btnRegister";
             this.btnRegister.Size = new System.Drawing.Size(75, 23);
@@ -55,6 +56,7 @@
             // 
             // btnInvoke
             // 
+            this.btnInvoke.Enabled = false;
             this.btnInvoke.Location = new System.Drawing.Point(94, 13);
             this.btnInvoke.Name = "btnInvoke";
             this.btnInvoke.Size = new System.Drawing.Size(75, 23);

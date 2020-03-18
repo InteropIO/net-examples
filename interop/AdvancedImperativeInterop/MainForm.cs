@@ -10,132 +10,107 @@ using DOT.AGM.Client;
 using DOT.AGM.Extensions;
 using DOT.Core.Extensions;
 using Tick42;
+using Tick42.StartingContext;
 
 namespace AdvancedImperativeInterop
 {
     public partial class MainForm : Form
     {
         private readonly string endpointName_ = "HandleCompositeObject";
-
-        private readonly PropertyInfo[] instanceProps_ =
-            typeof(IInstance).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
-
+        private readonly PropertyInfo[] instanceProps_ = typeof(IInstance).GetProperties().Where(p => p.PropertyType == typeof(string)).ToArray();
         private readonly Random rnd_ = new Random();
+
+        public Glue42 _glue42;
 
         public MainForm()
         {
             InitializeComponent();
+            InitializeGlue();
 
             instanceProps_.Each(p => targets_.Columns.Add(p.Name));
-            targets_.DoubleClick += TargetsOnMouseDoubleClick;
         }
 
-        public string GlueUsername { get; set; }
-
-        public Glue42 Glue { get; private set; }
-
-        private void TargetsOnMouseDoubleClick(object o, EventArgs e)
+        private void InitializeGlue()
         {
-        }
+            // get the form's synchronization context (gui thread) to be able to pass it for marshalling the events
 
-        private void Log(string logMessage)
-        {
-            if (InvokeRequired)
+            SynchronizationContext synchronizationContext = SynchronizationContext.Current;
+
+            // initialize Tick42 Interop
+            Log("Initializing Glue42");
+
+            var initializeOptions = new InitializeOptions()
             {
-                // post it, and exit to avoid dead-locks since we've asked Glue42 to interop marshal events
-                // with the synchronization context
-                BeginInvoke((Action) (() => Log(logMessage)));
+                ApplicationName = "Hello Glue42 Advanced Imperative Interop",
+                InitializeTimeout = TimeSpan.FromSeconds(5),
+                AdvancedOptions = new Glue42.AdvancedOptions() {  SynchronizationContext = synchronizationContext }
+            };
+
+            Glue42.InitializeGlue(initializeOptions)
+                .ContinueWith((glue) =>
+                {
+                    //unable to register glue
+                    if (glue.Status == TaskStatus.Faulted)
+                    {
+                        Log("Unable to initialize Glue42");
+                        return;
+                    }
+
+                    _glue42 = glue.Result;
+
+                    // subscribe to interop connection status event
+                    _glue42.Interop.ConnectionStatusChanged += (s, args) => { Log($"Glue connection is now {args.Status}"); };
+                    _glue42.Interop.EndpointStatusChanged += InteropEndpointStatusChanged;
+
+                    _glue42.Interop.RegisterEndpoint(mdb => mdb.SetMethodName(endpointName_),
+                        (method, context, caller, resultBuilder, asyncResponseCallback, cookie) =>
+                           ThreadPool.QueueUserWorkItem(_ =>
+                           {
+                               Log($"Call from {caller}");
+                               Value transactionValue = context.Arguments.GetValueByName("transaction", v => v);
+
+                                // deserialize the transaction
+                                Transaction transaction =
+                                   _glue42.Interop.AGM.AGMObjectSerializer.Deserialize<Transaction>(transactionValue);
+
+                                // prepare some values to get back to the caller as a result
+                                string transactionId = Guid.NewGuid().ToString();
+
+                                // do slow job here with context and caller
+                                Thread.Sleep(500);
+
+                                // respond when ready
+                                asyncResponseCallback(resultBuilder
+                                   .SetMessage("Transaction queued")
+                                   .SetContext(cb => cb.AddValue("transactionId", transactionId)).Build());
+                           }));
+
+                    Log("Initialized Glue.");
+                });
+        }
+
+        private void InteropEndpointStatusChanged(object sender, InteropEndpointStatusChangedEventArgs e)
+        {
+            // we can just interact with the ui since we have specified synchronization context
+            if (!string.Equals(e.InteropEndpoint.Definition.Name, endpointName_, StringComparison.CurrentCultureIgnoreCase))
+            {
+                // ignore non-interesting endpoints
                 return;
             }
 
-            txtLog_.AppendText(logMessage + "\r\n");
-        }
+            bool activated = e.InteropEndpoint.IsValid;
+            string status = activated ? "+++ Discovered" : "--- Disappeared";
 
-        private void InitializeGlue(SynchronizationContext synchronizationContext)
-        {
-            // initialize Tick42 Interop (AGM) and Metrics components
+            Log($"{status} advanced instance {e.InteropEndpoint.OriginalServer}");
 
-            Log("Initializing Glue42");
-            GlueUsername = Environment.UserName;
-            Log($"User is {GlueUsername}");
-
-            // these envvars are expanded in some configuration files
-            Environment.SetEnvironmentVariable("PROCESSID", Process.GetCurrentProcess().Id + "");
-            Environment.SetEnvironmentVariable("GW_USERNAME", GlueUsername);
-            //Environment.SetEnvironmentVariable("DEMO_MODE", Mode + "");
-
-            // The Glue42 facade provides a simplified programming
-            // interface over the core Glue42 components.
-            Glue = new Glue42();
-
-            Glue.Interop.ConnectionStatusChanged += (sender, args) => { Log($"Glue connection is now {args.Status}"); };
-            Glue.Interop.EndpointStatusChanged += (sender, args) =>
+            if (activated)
             {
-                // we can just interact with the ui since we have specified synchronization context
-
-                if (!string.Equals(args.InteropEndpoint.Definition.Name, endpointName_,
-                    StringComparison.CurrentCultureIgnoreCase))
-                {
-                    // ignore non-interesting endpoints
-                    return;
-                }
-
-                bool activated = args.InteropEndpoint.IsValid;
-
-                string status = activated ? "+++ Discovered" : "--- Disappeared";
-
-                Log($"{status} advanced instance {args.InteropEndpoint.OriginalServer}");
-
-                if (activated)
-                {
-                    AddTarget(args);
-                }
-                else
-                {
-                    RemoveTarget(args);
-                }
-            };
-
-            var advancedOptions = new Glue42.AdvancedOptions {SynchronizationContext = synchronizationContext};
-            
-            Glue.Initialize(
-                Assembly.GetEntryAssembly().GetName().Name, // application name - required
-                useAgm: true,
-                useAppManager: true,
-                useMetrics: true,
-                useContexts: false,
-                useGlueWindows: false,
-                credentials: Tuple.Create(GlueUsername, ""),
-                advancedOptions: advancedOptions);
-
-            Glue.Interop.RegisterEndpoint(mdb => mdb.SetMethodName(endpointName_),
-                (method, context, caller, resultBuilder, asyncResponseCallback, cookie) =>
-                    ThreadPool.QueueUserWorkItem(_ =>
-                    {
-                        Log($"Call from {caller}");
-                        Value transactionValue = context.Arguments.GetValueByName("transaction", v => v);
-
-                        // deserialize the transaction
-                        Transaction transaction =
-                            Glue.Interop.AGM.AGMObjectSerializer.Deserialize<Transaction>(transactionValue);
-
-                        // prepare some values to get back to the caller as a result
-                        string transactionId = Guid.NewGuid().ToString();
-
-                        // do slow job here with context and caller
-                        Thread.Sleep(500);
-
-                        // respond when ready
-                        asyncResponseCallback(resultBuilder
-                            .SetMessage("Transaction queued")
-                            .SetContext(cb => cb.AddValue("transactionId", transactionId)).Build());
-                    }));
-
-            Log("Initialized Glue Metrics and AGM");
-
-            //Glue.Metrics.TrackUserJourneyMetrics(this, trackWindows: true, trackClicks: true);
-
-            Log("Initialized Glue");
+                AddTarget(e);
+            }
+            else
+            {
+                RemoveTarget(e);
+            }
         }
 
         private void RemoveTarget(InteropEndpointStatusChangedEventArgs args)
@@ -165,26 +140,6 @@ namespace AdvancedImperativeInterop
             });
         }
 
-        private void MainFormShown(object sender, EventArgs e)
-        {
-            // get the form's synchronization context (gui thread) to be able to pass it for marshalling the events
-
-            SynchronizationContext synchronizationContext = SynchronizationContext.Current;
-
-            Task.Run(() =>
-            {
-                try
-                {
-                    InitializeGlue(synchronizationContext);
-                }
-                catch (Exception exception)
-                {
-                    Log("Failed initializing Glue");
-                    Log(exception.ToString());
-                }
-            });
-        }
-
         private void TargetsMouseDoubleClick(object sender, MouseEventArgs e)
         {
             var item = targets_.GetItemAt(e.X, e.Y);
@@ -197,7 +152,7 @@ namespace AdvancedImperativeInterop
             var transaction = CreateTransaction();
 
             // invoke the target passing the transaction as an argument
-            Glue.Interop.Invoke(endpointName_, builder => builder.AddObject("transaction", transaction),
+            _glue42.Interop.Invoke(endpointName_, builder => builder.AddObject("transaction", transaction),
                     // specify that we want the selected target only
                     new TargetSettings().WithTargetSelector((method, instance) =>
                         instance.InstanceId == target.InstanceId))
@@ -213,6 +168,19 @@ namespace AdvancedImperativeInterop
                     Log(
                         $"Server said {cmr.ResultMessage} with transactionId = {cmr.ResultContext.GetValueByName("transactionId", v => v.AsString)}");
                 });
+        }
+
+        private void Log(string logMessage)
+        {
+            if (InvokeRequired)
+            {
+                // post it, and exit to avoid dead-locks since we've asked Glue42 to interop marshal events
+                // with the synchronization context
+                BeginInvoke((Action)(() => Log(logMessage)));
+                return;
+            }
+
+            txtLog_.AppendText(logMessage + "\r\n");
         }
 
         private Transaction CreateTransaction()

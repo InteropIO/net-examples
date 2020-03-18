@@ -64,7 +64,6 @@
             this.MaximizeBox = false;
             this.Name = "Form1";
             this.Text = "AdvancedImperativeInterop";
-            this.Shown += new System.EventHandler(this.MainFormShown);
             this.ResumeLayout(false);
 
         }

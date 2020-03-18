@@ -14,20 +14,23 @@ using DOT.Core.Extensions;
 using DOT.Logging;
 using Tick42;
 using Tick42.Entities;
+using Tick42.StartingContext;
 
 namespace AdvancedDeclarativeInterop
 {
     public partial class Form1 : Form, IServiceContract
     {
-        private int invokeCount_;
-        private IServiceContract service_;
+        private int _invokeCount;
+        private IServiceContract _service;
+        public Glue42 _glue42;
 
         public Form1()
         {
             InitializeComponent();
+            InitializeGlue();
         }
 
-        public Glue42 Glue { get; private set; }
+        #region IServiceContract Implementation
 
         void IServiceContract.ShowClients(T42Contact[] contacts, IServiceOptions serviceOption)
         {
@@ -37,7 +40,7 @@ namespace AdvancedDeclarativeInterop
         void IServiceContract.GetState(Action<ClientPortfolioDemoState> handleResult)
         {
             handleResult(new ClientPortfolioDemoState
-                {Height = 200, Left = 10, SelectedClient = Guid.NewGuid().ToString(), Top = 123, Width = 400});
+            { Height = 200, Left = 10, SelectedClient = Guid.NewGuid().ToString(), Top = 123, Width = 400 });
         }
 
         void IServiceContract.CheckAsyncClientMethodResult(ref int someInt,
@@ -53,7 +56,7 @@ namespace AdvancedDeclarativeInterop
         {
             sciResultCode = SCIResultCode.Succeeded;
             dt = DateTime.UtcNow.AddYears(5);
-            outResponse = new CompositeType {Message = "This was an out response"};
+            outResponse = new CompositeType { Message = "This was an out response" };
             Log($"{nameof(IServiceContract.SetCurrentInstrument)}: {symbolNames?.AsString()}");
             return new CompositeType();
         }
@@ -84,7 +87,7 @@ namespace AdvancedDeclarativeInterop
 
         void IServiceContract.ComplexAsyncOutput(int input, Action<CompositeType> response)
         {
-            response(new CompositeType {Message = "You're fine with " + input});
+            response(new CompositeType { Message = "You're fine with " + input });
         }
 
         void IServiceContract.TestAGMOptions(string s, IServiceOptions options)
@@ -109,93 +112,67 @@ namespace AdvancedDeclarativeInterop
 
             Log($"Normal work of {nameof(IServiceContract.TestAGMOptions)} {s}");
         }
-        
-        protected override void OnShown(EventArgs e)
+
+        #endregion
+
+        private void InitializeGlue()
         {
-            SynchronizationContext synchronizationContext = SynchronizationContext.Current;
-
-            Task.Run(() =>
-            {
-                try
-                {
-                    InitializeGlue(synchronizationContext);
-                }
-                catch (Exception exception)
-                {
-                    Log("Failed initializing Glue");
-                    Log(exception.ToString());
-                }
-            });
-        }
-
-        private void InitializeGlue(SynchronizationContext synchronizationContext)
-        {
-            // initialize Tick42 Interop (AGM) and Metrics components
-
+            // initialize Tick42 Interop
             Log("Initializing Glue42");
 
-            string glueUser = Environment.UserName;
-            Log($"User is {glueUser}");
-
-            // these envvars are expanded in some configuration files
-            Environment.SetEnvironmentVariable("PROCESSID", Process.GetCurrentProcess().Id + "");
-            Environment.SetEnvironmentVariable("GW_USERNAME", glueUser);
-            //Environment.SetEnvironmentVariable("DEMO_MODE", Mode + "");
-
-            // The Glue42 facade provides a simplified programming
-            // interface over the core Glue42 components.
-            Glue = new Glue42();
-
-            Glue.Interop.ConnectionStatusChanged += (sender, args) => { Log($"Glue connection is now {args.Status}"); };
-            Glue.Interop.TargetStatusChanged += (sender, args) => Log($"{args.Status.State} target {args.Target}");
-
-            var advancedOptions = new Glue42.AdvancedOptions {SynchronizationContext = synchronizationContext};
-
-            Glue.Initialize(
-                Assembly.GetEntryAssembly().GetName().Name, // application name - required
-                useAgm: true,
-                useAppManager: true,
-                useMetrics: true,
-                useContexts: false,
-                useGlueWindows: false,
-                credentials: Tuple.Create(glueUser, ""),
-                advancedOptions: advancedOptions);
-
-            // force single target
-            service_ = Glue.Interop.CreateServiceProxy<IServiceContract>(targetType: MethodTargetType.Any);
-
-            // let's track the status of the service target - if anybody has implemented it.
-
-            Glue.Interop.CreateServiceSubscription(service_,
-                (_, status) => Log($"{nameof(IServiceContract)} is now {(status ? string.Empty : "in")}active"));
-
-            Log("Initialized Glue Interop");
-        }
-
-        private void Log(string logMessage)
-        {
-            if (InvokeRequired)
+            var initializeOptions = new InitializeOptions()
             {
-                // post it, and exit to avoid dead-locks since we've asked Glue42 to interop marshal events
-                // with the synchronization context
-                BeginInvoke((Action) (() => Log(logMessage)));
-                return;
-            }
+                ApplicationName = "Hello Glue42 Advance Declarative Interop",
+                AdvancedOptions = new Glue42.AdvancedOptions() { SynchronizationContext = SynchronizationContext.Current },
+                InitializeTimeout = TimeSpan.FromSeconds(5)
+            };
 
-            txtLog_.AppendText(logMessage + "\r\n");
+            Glue42.InitializeGlue(initializeOptions)
+                .ContinueWith((glue) =>
+                {
+                    //unable to register glue
+                    if (glue.Status == TaskStatus.Faulted)
+                    {
+                        Log("Unable to initialize Glue42");
+                        return;
+                    }
+
+                    _glue42 = glue.Result;
+
+                    // subscribe to interop connection status event
+                    _glue42.Interop.ConnectionStatusChanged += (sender, args) => { Log($"Glue connection is now {args.Status}"); };
+                    _glue42.Interop.TargetStatusChanged += (sender, args) => Log($"{args.Status.State} target {args.Target}");
+
+                    // force single target
+                    _service = _glue42.Interop.CreateServiceProxy<IServiceContract>(targetType: MethodTargetType.Any);
+
+                    // let's track the status of the service target - if anybody has implemented it.
+
+                    _glue42.Interop.CreateServiceSubscription(
+                        _service,
+                        (_, status) => Log($"{nameof(IServiceContract)} is now {(status ? string.Empty : "in")}active"));
+
+                    //Enable registration of ServiceContract
+                    BeginInvoke((Action)(() => btnRegister.Enabled = true));
+
+                    Log("Initialized Glue Interop");
+                });
         }
 
         private void BtnRegisterClick(object sender, EventArgs e)
         {
-            Glue.Interop.RegisterService<IServiceContract>(this);
+            _glue42.Interop.RegisterService<IServiceContract>(this);
+
+            btnRegister.Enabled = false;
+            btnInvoke.Enabled = true;
         }
 
         private void BtnInvokeClick(object sender, EventArgs e)
         {
-            invokeCount_++;
+            _invokeCount++;
 
             // intercepting the result
-            service_.ShowClients(new[]
+            _service.ShowClients(new[]
             {
                 new T42Contact
                 {
@@ -208,7 +185,7 @@ namespace AdvancedDeclarativeInterop
             }, new ServiceOptions(
                 (so, invocation, cmr, ex) =>
                 {
-                    Log($"{nameof(service_.ShowClients)} completed with {cmr} : {ex}");
+                    Log($"{nameof(_service.ShowClients)} completed with {cmr} : {ex}");
                     if (cmr == null || cmr.Status != MethodInvocationStatus.Succeeded || ex != null)
                     {
                         Log("Cannot show client due to " +
@@ -217,17 +194,17 @@ namespace AdvancedDeclarativeInterop
                 }));
 
             // async contract result
-            service_.GetState(state => { Log("State is " + state); });
+            _service.GetState(state => { Log("State is " + state); });
 
             int x = 5;
 
             // async handle the internal method result
-            service_.CheckAsyncClientMethodResult(ref x,
+            _service.CheckAsyncClientMethodResult(ref x,
                 cmr => Log(
                     $"{nameof(IServiceContract.CheckAsyncClientMethodResult)} completed with {cmr?.Status}"));
 
             // let's intercept the result and also add one additional value - to not break the contract (alter the interface)
-            service_.TestAGMOptions("Hello",
+            _service.TestAGMOptions("Hello",
                 new ServiceOptions(
                     builder =>
                         // we can tweak 
@@ -236,7 +213,7 @@ namespace AdvancedDeclarativeInterop
                             //add one additional value
                             .SetContext(cb =>
                                 cb.AddValue("AdditionalValue",
-                                    invokeCount_ % 2 == 0 ? "break" : Guid.NewGuid().ToString()))
+                                    _invokeCount % 2 == 0 ? "break" : Guid.NewGuid().ToString()))
                             // let's set the logging level for that call
                             .SetInvocationLoggingLevel(LogLevel.Debug),
 
@@ -245,33 +222,46 @@ namespace AdvancedDeclarativeInterop
 
 
             // let's consume some composite types, enums, arrays etc.
-            CompositeType result = service_.SetCurrentInstrument(new[] {"RIC=VOD.L"}, "RIC", "VOD.L", "LN", "BaiKai",
+            CompositeType result = _service.SetCurrentInstrument(new[] { "RIC=VOD.L" }, "RIC", "VOD.L", "LN", "BaiKai",
                 out SCIResultCode sciResultCode, out DateTime dt, out CompositeType outResponse);
 
             // try the custom rectangle serializer
-            var offsetRect = service_.Offset(new Rectangle(0, 0, 50, 50), 20, 20);
+            var offsetRect = _service.Offset(new Rectangle(0, 0, 50, 50), 20, 20);
 
             // JS friendly - unwrapped object
-            var compositeUnwrapped = service_.GetUnwrapped("a,b,c,d,e", 15);
+            var compositeUnwrapped = _service.GetUnwrapped("a,b,c,d,e", 15);
 
             // remote property
-            var oldBounds = service_.Bounds;
+            var oldBounds = _service.Bounds;
             Log($"Old bounds : {oldBounds}");
-            service_.Bounds = new Rectangle(100, 100, 500, 500);
-            var newBounds = service_.Bounds;
+            _service.Bounds = new Rectangle(100, 100, 500, 500);
+            var newBounds = _service.Bounds;
             Log($"New bounds : {newBounds}");
 
             // multiple async results
-            service_.CalculateSumAndMulAsync(2, 5, (i, i1) =>
+            _service.CalculateSumAndMulAsync(2, 5, (i, i1) =>
             {
                 Log($"i = {i}; i1  = {i1}");
             });
 
             // composite async output
-            service_.ComplexAsyncOutput(511, response =>
+            _service.ComplexAsyncOutput(511, response =>
             {
                 Log("Complex async response " + response.Message);
             });
+        }
+
+        private void Log(string logMessage)
+        {
+            if (InvokeRequired)
+            {
+                // post it, and exit to avoid dead-locks since we've asked Glue42 to interop marshal events
+                // with the synchronization context
+                BeginInvoke((Action)(() => Log(logMessage)));
+                return;
+            }
+
+            txtLog_.AppendText(logMessage + "\r\n");
         }
     }
 }

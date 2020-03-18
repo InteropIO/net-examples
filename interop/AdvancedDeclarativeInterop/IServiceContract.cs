@@ -153,7 +153,17 @@ namespace AdvancedDeclarativeInterop
             throw new NotImplementedException();
         }
 
+        public object Create(Type type, Value value, ObjectSerializerSettings settings, params object[] args)
+        {
+            throw new NotImplementedException();
+        }
+
         public bool CanCreate(Type objectType, Value value, params object[] args)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool CanCreate(Type objectType, Value context, ObjectSerializerSettings settings, params object[] args)
         {
             throw new NotImplementedException();
         }

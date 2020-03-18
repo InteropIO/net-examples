@@ -44,6 +44,7 @@
             // 
             // txtMsg_
             // 
+            this.txtMsg_.Enabled = false;
             this.txtMsg_.Location = new System.Drawing.Point(12, 383);
             this.txtMsg_.Name = "txtMsg_";
             this.txtMsg_.Size = new System.Drawing.Size(776, 55);
@@ -62,7 +63,6 @@
             this.MaximizeBox = false;
             this.Name = "MainForm";
             this.Text = "Form1";
-            this.Shown += new System.EventHandler(this.MainFormShown);
             this.ResumeLayout(false);
 
         }
