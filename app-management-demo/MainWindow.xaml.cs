@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DOT.Core.Extensions;
 using DOT.Logging;
 using Tick42;
 using Tick42.AppManager;
@@ -92,7 +93,14 @@ namespace AppManagerDemo
                 appManager.ApplicationRemoved += OnApplicationRemoved;
                 appManager.ApplicationInstanceStarted += OnApplicationInstanceStarted;
                 appManager.ApplicationInstanceStopped += OnApplicationInstanceStopped;
+
+                ExecuteAction(() => appManager.Applications.Each(OnApplicationAdded));
             }
+        }
+
+        private void OnApplicationAdded(IAppManagerApplication application)
+        {
+            applicationList.Items.Add(application);
         }
 
         protected override void OnClosed(EventArgs e)

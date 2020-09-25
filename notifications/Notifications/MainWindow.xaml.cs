@@ -122,7 +122,18 @@ namespace WPFApp
                 actions
             );
 
-            _glue.Notifications.Publish(notification);
+            _glue.Notifications.Publish(notification)
+                .ContinueWith(r =>
+                {
+                    if (r.Status != TaskStatus.RanToCompletion)
+                    {
+
+                    }
+                    else
+                    {
+
+                    }
+                });
         }
 
         public void AcceptNotification(string customerId)
