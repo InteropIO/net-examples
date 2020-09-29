@@ -37,8 +37,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Glue42, Version=2018.2127.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\Glue42.2018.2127.0.0\lib\net45\Glue42.dll</HintPath>
+    <Reference Include="Glue42, Version=2018.2128.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
+      <HintPath>packages\Glue42.2018.2128.0.0\lib\net45\Glue42.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
