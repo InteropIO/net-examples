@@ -39,7 +39,7 @@ namespace HelloGlue42Interop
 
                     // Register synchronous calling endpoint, called HelloGlue.
                     // we could use the serverEndpoint returned by this method to later unregister it by calling glue.Interop.UnregisterEndpoint
-                    IServerMethod serverEndpoint = glue42.Interop.RegisterSyncronousEndpoint(mdb => mdb.SetMethodName("HelloGlue"), OnHelloWorldInvoked);
+                    IServerMethod serverEndpoint = glue42.Interop.RegisterSynchronousEndpoint(mdb => mdb.SetMethodName("HelloGlue"), OnHelloWorldInvoked);
 
                     Log($"Registered endpoint called {serverEndpoint.Definition.Name}");
                     Log("Initialized Glue.");
