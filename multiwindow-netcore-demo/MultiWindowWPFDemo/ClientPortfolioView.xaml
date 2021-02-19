@@ -1,0 +1,32 @@
+﻿<Window x:Class="MultiWindowWPFDemo.ClientPortfolioView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MultiWindowWPFDemo"
+        mc:Ignorable="d"
+        Title="ClientPortfolioView" Height="300" Width="500">
+     <DockPanel LastChildFill="True" Name="Content">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+            <TextBlock Margin="10">Current color</TextBlock>
+            <Grid Width="80" Height="25">
+                <ComboBox Name="ColorSelector">
+                    <Rectangle Width="20" Height="20" Fill="Red">
+                    </Rectangle>
+
+                    <Rectangle Width="20" Height="20" Fill="Green">
+                    </Rectangle>
+
+                    <Rectangle Width="20" Height="20" Fill="Blue">
+                    </Rectangle>
+                </ComboBox>
+            </Grid>
+        </StackPanel>
+       
+        <Rectangle Name="ColorRectangle">
+            <Rectangle.Fill>
+                <SolidColorBrush Color="White"/>
+            </Rectangle.Fill>
+        </Rectangle>
+    </DockPanel>
+</Window>
