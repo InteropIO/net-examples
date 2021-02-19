@@ -38,7 +38,7 @@ namespace MultiWindowWPFDemo
         public string GlueWindowId { get; set; }
         public string TabGroupId { get; set; }
 
-        private readonly string ChildWindowAppName = "ColorChild";
+        private readonly string ChildWindowAppName = "ColorChildNETCore";
 
         public MainWindow()
         {
@@ -66,7 +66,7 @@ namespace MultiWindowWPFDemo
 
             Glue42.InitializeGlue(new InitializeOptions
             {
-                ApplicationName = "MultiWindowDemo"
+                ApplicationName = "MultiWindowDemoNETCore"
             })
                 .ContinueWith(async r =>
                 {
@@ -78,7 +78,7 @@ namespace MultiWindowWPFDemo
                     {
                         glue42_ = r.Result;
 
-                        mainWindow_ = await glue42_.GlueWindows.RegisterWindow(this, builder => builder.WithTitle("MultiWindowDemo").WithChannelSupport(true).WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId))).ConfigureAwait(false);
+                        mainWindow_ = await glue42_.GlueWindows.RegisterWindow(this, builder => builder.WithTitle("MultiWindowDemoNETCore").WithChannelSupport(true).WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId))).ConfigureAwait(false);
 
                         glue42_.AppManager.RegisterWPFApp<ClientPortfolioView, ClientPortfolioView.State, MainWindow>(
                             app =>
@@ -86,13 +86,13 @@ namespace MultiWindowWPFDemo
                                 app.WithName(ChildWindowAppName)
                                  .WithTitle(ChildWindowAppName)
                                  .WithContext(this)
-                                 .WithType(GlueWindowType.Tab).WithFolder("MultiWindowChildApps");
+                                 .WithType(GlueWindowType.Tab).WithFolder("MultiWindowNETCoreChildApps");
                             });
 
                         await glue42_.AppManager
                             .AwaitApplication((app) => app.Name == ChildWindowAppName).ConfigureAwait(false);
 
-                        var gwOptions = glue42_.GetStartupWindowOptions("MultiWindowWPF");
+                        var gwOptions = glue42_.GetStartupWindowOptions("MultiWindowDemoNETCore");
                     }
                 });
         }
