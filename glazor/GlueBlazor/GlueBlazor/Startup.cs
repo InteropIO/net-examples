@@ -32,18 +32,6 @@ namespace GlueBlazor
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddTransient<GlueProvider>();
-            //services.AddSingleton(async provider =>
-            //{
-            //    Debugger.Launch();
-            //    using var scope = provider.CreateScope();
-            //    var jsProvider = scope.ServiceProvider.GetService<IJSRuntime>();
-
-            //    var result = await jsProvider.InvokeAsync<object>("glue42gd.getGWToken", new object[0]).ConfigureAwait(false);
-
-            //    var glue = await Glue42.InitializeGlue(new InitializeOptions { ApplicationName = "GlueBlazor" }).ConfigureAwait(false);
-
-            //    return glue;
-            //});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
