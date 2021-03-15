@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31005.135
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GlueBlazor", "GlueBlazor\GlueBlazor.csproj", "{484F5ABA-9E96-41B4-AD3D-7AFD8E92C6F2}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{484F5ABA-9E96-41B4-AD3D-7AFD8E92C6F2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{484F5ABA-9E96-41B4-AD3D-7AFD8E92C6F2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{484F5ABA-9E96-41B4-AD3D-7AFD8E92C6F2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{484F5ABA-9E96-41B4-AD3D-7AFD8E92C6F2}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4674A947-9475-4B49-B738-E90BE88DD997}
+	EndGlobalSection
+EndGlobal
