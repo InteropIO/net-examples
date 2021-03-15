@@ -33,7 +33,7 @@ namespace GlueBlazor.Data
             try
             {
                 // U can use this sugar method or fill the initialize options yourself with the token and gd info
-                options = await Glue42.GetHostedGDOptions(async tokenName => await jsRuntime_.InvokeAsync<string>(tokenName, new object[0]), async gd => await GetJSProp<GDHostInfo>(gd).ConfigureAwait(false));
+                options = await Glue42.GetHostedGDOptions(async gwTokenFuncName => await jsRuntime_.InvokeAsync<string>(gwTokenFuncName, new object[0]), async gdInfoPropName => await GetJSProp<GDHostInfo>(gdInfoPropName).ConfigureAwait(false));
             }
             catch (Exception e)
             {
@@ -48,6 +48,7 @@ namespace GlueBlazor.Data
 
         public async Task<T> GetJSProp<T>(string path)
         {
+            //ResolveValue is exposed in wwwroot/js/gd.js
             return await jsRuntime_.InvokeAsync<T>("ResolveValue", path);
         }
     }
