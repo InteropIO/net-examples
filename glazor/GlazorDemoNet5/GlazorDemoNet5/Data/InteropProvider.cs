@@ -71,7 +71,8 @@ namespace GlazorDemoNet5.Data
         }
 
         public async Task<T> GetJSProp<T>(string path)
-        {
+        {            
+            //ResolveValue is exposed in wwwroot/js/gd.js
             return await jsRuntime_.InvokeAsync<T>("ResolveValue", path);
         }
     }
