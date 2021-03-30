@@ -1,0 +1,100 @@
+﻿@page "/glue"
+@inject InteropProvider interop
+
+<h1>Glue demo</h1>
+
+<div class="row">
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="RegisterMethod">Register Method</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
+    </div>
+    <div class="col-sm-2">
+        <select @bind="selectedInstrument">
+            <option value=""></option>
+            @foreach (var instrument in availableInstruments)
+            {
+                <option value="@instrument">@instrument</option>
+            }
+        </select>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col">
+        @interopMessage
+    </div>
+</div>
+
+@code{
+    private IGlueInterop interop_;
+    string methodName = "glazor";
+    private async Task RegisterMethod()
+    {
+        interop_ = await interop.InitInterop().ConfigureAwait(false);
+        await interop_.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
+        {
+            await context.ResultBuilder.Succeed().ConfigureAwait(false);
+        }).ConfigureAwait(false);
+
+        interopMessage = string.Empty;
+        interopMessage = $"Registered method: {methodName}";
+    }
+
+    string interopMessage = string.Empty;
+
+    private async Task InvokeMethod()
+    {
+        var invocationResult = await interop_.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+
+        var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
+
+        interopMessage = string.Empty;
+        interopMessage = $"Invoked method: {methodName} with status: {status}";
+    }
+
+    @code {
+        string selectedInstrument = "";
+
+        List<string> availableInstruments = new List<string>()
+{
+        "VOD:LN",
+        "BARC:LN",
+        "BMW:GR",
+        "AAL:LN",
+        "GOOGL:US",
+        "MSFT:US",
+        "TEAM:US",
+        "CRM:US",
+        "JPM:US",
+        "FB:US"
+    };
+
+    }
+
+    @code {
+        private async Task SetInstrument()
+        {
+            //Assuming that there is an application open and set to the Red channel it will change the instrument
+
+            //var context = new ContextsManager(interop_.Peer);
+
+            //var blah = await context.GetContext("blah").ConfigureAwait(false);
+
+            //await blah.SetValue("asd", 123).ConfigureAwait(false);
+
+            var channels_ = await interop.InitChannels().ConfigureAwait(false);
+
+            var redChannel = await channels_.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
+
+            var context = channels_.JoinChannel(redChannel);
+
+            await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+        }
+    }
+
+}
