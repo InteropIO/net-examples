@@ -12,98 +12,58 @@ using Microsoft.JSInterop;
 
 namespace GlazorWebAssembly
 {
-    public class InteropProvider
+    public class GlueProvider
     {
-        private static TaskCompletionSource<IGlueInterop> interopTcs_;
-        private static TaskCompletionSource<IGlueChannels> channelsTcs_;
-
+        private static TaskCompletionSource<IGlue42Base> glueTcs_;
         private static IGlueLoggerFactory glueLoggerFactory_;
 
         private readonly IJSRuntime jsRuntime_;
         private readonly ILoggerFactory loggerFactory_;
 
 
-        public InteropProvider(IJSRuntime jsRuntime, ILoggerFactory loggerFactory)
+        public GlueProvider(IJSRuntime jsRuntime, ILoggerFactory loggerFactory)
         {
             jsRuntime_ = jsRuntime;
             loggerFactory_ = loggerFactory;
-            if (glueLoggerFactory_ == null)
-            {
-                glueLoggerFactory_ = new GlueLoggerFactory(loggerFactory);
-            }
 
-            glueLoggerFactory_.GetLogger(typeof(InteropProvider))
-                .Info($"{nameof(Environment.UserName)} is {Environment.UserName}");
-            //log4net.Config.XmlConfigurator.Configure(Assembly.GetExecutingAssembly().GetManifestResourceStream("GlazorWebAssembly.log4net.cfg"));
+            glueLoggerFactory_ ??= new GlueLoggerFactory(loggerFactory);
         }
 
+        public IGlue42Base Glue42 { get; private set; }
 
-        public static IGlueInterop Interop { get; private set; }
-        public static IGlueChannels Channels { get; private set; }
-
-        public async Task<IGlueChannels> InitChannels()
+        public async Task<IGlue42Base> InitGlue()
         {
-            if (Interlocked.CompareExchange(ref channelsTcs_,
-                    new TaskCompletionSource<IGlueChannels>(TaskCreationOptions.RunContinuationsAsynchronously),
-                    null) is
-                { } tcs)
+            if (Interlocked.CompareExchange(ref glueTcs_, new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is { } tcs)
             {
                 return await tcs.Task.ConfigureAwait(false);
             }
 
-            var channels = new GlueChannels(await InitInterop().ConfigureAwait(false));
-
-            channelsTcs_.TrySetResult(channels);
-
-            return channels;
-        }
-
-        public async Task<IGlueInterop> InitInterop()
-        {
-            if (Interlocked.CompareExchange(ref interopTcs_,
-                    new TaskCompletionSource<IGlueInterop>(TaskCreationOptions.RunContinuationsAsynchronously), null) is
-                { } tcs)
-            {
-                return await tcs.Task.ConfigureAwait(false);
-            }
-
-            GDHostInfo gdInfo = null;
-            string gwToken = null;
+            InitializeOptions initOptions;
 
             try
             {
-                gdInfo = await GetJSProp<GDHostInfo>("glue42gd").ConfigureAwait(false);
-                gwToken = await jsRuntime_.InvokeAsync<string>("glue42gd.getGWToken").ConfigureAwait(false);
+                initOptions = await Glue42Base.GetHostedGDOptions(async tokenName => await jsRuntime_.InvokeAsync<string>(tokenName).ConfigureAwait(false), async gdInfoPropName => await GetJSProp<GDHostInfo>(gdInfoPropName).ConfigureAwait(false)).ConfigureAwait(false);
             }
             catch (Exception e)
             {
+                //This username should match the GD username
+                var username = "runningGDInstanceUsername";
+                initOptions = new InitializeOptions() { AdvancedOptions = new AdvancedOptions()
+                {
+                    AuthenticationProvider = new GatewaySecretAuthenticationProvider(username, username)
+                }, ApplicationName = "GlazorWebAssembly"};
             }
 
-            //In case of external hosting envrionment (browser), the user should match the username used for GD
-            //gdInfo = gdInfo ?? new GDHostInfo { ApplicationName = "Glazor .NET 5", User = Environment.UserName };
+            initOptions.AdvancedOptions.SocketFactory = connection =>
+                new ClientSocket(new Uri("ws://127.0.0.1:8385"), new Configuration());
 
-            var protocolSerializer =
-                new GwProtocolSerializer(glueLoggerFactory_.GetLogger(typeof(GwProtocolSerializer)));
+            initOptions.LoggerFactory = glueLoggerFactory_;
 
-            var identity = protocolSerializer.SerializeRemoteId(new Instance(true, true));
+            var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
 
-            identity[InstanceSchema.Instance.ApplicationName] = "GlueAssembly";
+            Glue42 = glue;
 
-            identity[InstanceSchema.Instance.InstanceId] = Guid.NewGuid().ToString();
-
-            identity[InstanceSchema.Instance.UserName] = "ttomov";
-
-            var authProvider = new GatewaySecretAuthenticationProvider("ttomov", "ttomov");
-
-            var interop = await GlueInterop.InitInterop(
-                new GlueConnectionBase<GwMessage>.BusConfiguration
-                {
-                    GatewayUri = "ws://127.0.0.1:8385",
-                    SocketFactory = c => new ClientSocket(new Uri("ws://127.0.0.1:8385"), new Configuration())
-                }, authProvider, protocolSerializer, identity,
-                glueLoggerFactory_).ConfigureAwait(false);
-            interopTcs_.TrySetResult(interop);
-            return interop;
+            return glue;
         }
 
         public async Task<T> GetJSProp<T>(string path)
