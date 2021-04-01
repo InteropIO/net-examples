@@ -1,19 +1,26 @@
 ﻿@page "/glue"
+@using Glue.AppManager
+@using Glue.Channels
+@using Glue.Logging
+@inject IGlueLoggerFactory GlueLoggerFactory
 @inject GlueProvider glueProvider
 
 <h1>Glue demo</h1>
 
 <div class="row">
-    <div class="col-sm-2">
+    <div class="col-sm">
         <button class="btn btn-primary btn-sm" @onclick="RegisterMethod">Register Method</button>
     </div>
-    <div class="col-sm-2">
+    <div class="col-sm">
         <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
     </div>
-    <div class="col-sm-2">
+    <div class="col-sm">
+        <button class="btn btn-primary btn-sm" @onclick="StartApplication">Start application</button>
+    </div>
+    <div class="col-sm">
         <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
     </div>
-    <div class="col-sm-2">
+    <div class="col-md">
         <select @bind="selectedInstrument">
             <option value=""></option>
             @foreach (var instrument in availableInstruments)
@@ -29,6 +36,7 @@
         @interopMessage
     </div>
 </div>
+
 
 @code{
     private IGlue42Base glue_;
@@ -79,16 +87,39 @@
 
     }
 
-    @code {
-        private async Task SetInstrument()
+@code
+{
+    private async Task StartApplication()
+    {
+        await EnsureGlue().ConfigureAwait(false);
+        var app = await glue_.AppManager.AwaitApplication(a => a.Name == "channelsclientportfolio").ConfigureAwait(false);
+
+        var instance = await app.Start(AppManagerContext.CreateNew(GlueLoggerFactory.GetLogger(nameof(StartApplication)))).ConfigureAwait(false);
+    }
+}
+
+@code {
+    private async Task SetInstrument()
+    {
+        await EnsureGlue().ConfigureAwait(false);
+
+        var mainWindow = await glueProvider.GetMainWindow().ConfigureAwait(false);
+
+        IGlueChannelContext channelContext = null;
+
+        if (mainWindow?.ChannelContext != null)
         {
-            await EnsureGlue().ConfigureAwait(false);
+            channelContext = mainWindow.ChannelContext;
+        }
+        else
+        {
             var redChannel = await glue_.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
 
-            var context = glue_.Channels.JoinChannel(redChannel);
-
-            await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+             channelContext = glue_.Channels.JoinChannel(redChannel);
         }
+
+        await channelContext.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+    }
     }
 
 @code
