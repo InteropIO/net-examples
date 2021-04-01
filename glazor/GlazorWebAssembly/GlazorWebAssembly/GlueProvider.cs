@@ -19,6 +19,7 @@ namespace GlazorWebAssembly
     {
         private static TaskCompletionSource<IGlue42Base> glueTcs_;
         private static IGlueLoggerFactory glueLoggerFactory_;
+        private static IGlueLog logger_;
         private const string defaultGatewayUri = "ws://127.0.0.1:8385";
 
         private readonly IJSRuntime jsRuntime_;
@@ -28,6 +29,7 @@ namespace GlazorWebAssembly
             jsRuntime_ = jsRuntime;
 
             glueLoggerFactory_ ??= loggerFactory;
+            logger_ ??= glueLoggerFactory_.GetLogger(typeof(GlueProvider));
         }
         public IGlue42Base Glue42 { get; private set; }
 
@@ -44,6 +46,7 @@ namespace GlazorWebAssembly
         {
             if (Interlocked.CompareExchange(ref glueTcs_, new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is { } tcs)
             {
+                //already initialized
                 return await tcs.Task.ConfigureAwait(false);
             }
 
@@ -53,6 +56,7 @@ namespace GlazorWebAssembly
 
             try
             {
+                // try to get the GD hosted settings if this is started as a GD application (in order to do this u have to configure your own application in %localappdata%\tick42\gluedesktop\config\apps by adding a .json file for it
                 initOptions = await Glue42Base.GetHostedGDOptions(async tokenName => await jsRuntime_.InvokeAsync<string>(tokenName).ConfigureAwait(false), async gdInfoPropName =>
                 {
                     var gdHostInfo = await GetJSProp<GDHostInfo>(gdInfoPropName).ConfigureAwait(false);
@@ -62,6 +66,7 @@ namespace GlazorWebAssembly
             }
             catch (Exception e)
             {
+                // Something went wrong probably the application is started in the browser
                 var username = await GetUsername().ConfigureAwait(false);
 
                 initOptions = new InitializeOptions() { AdvancedOptions = new AdvancedOptions()
@@ -70,22 +75,31 @@ namespace GlazorWebAssembly
                 }, ApplicationName = "GlazorWebAssembly"};
             }
 
+            // choose the socket client implementation that is web assembly friendly
             initOptions.AdvancedOptions.SocketFactory = connection =>
                 new ClientSocket(new Uri(initOptions.GatewayUri ?? defaultGatewayUri), new Configuration());
 
+            //initialize the logging factory
             initOptions.LoggerFactory = glueLoggerFactory_;
             initOptions.AppType = "window";
 
             var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
 
-            IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
-
             if (windowId != null)
             {
-                MainWindow = await RegisterMainWindow(glue, dispatcher, windowId);
+                // This will be executed in hosted scenarios where we have information about the window
+                MainWindow = await RegisterMainWindow(glue, windowId);
 
                 MainWindow.ChannelContext?.Subscribe(new LambdaGlueChannelEventHandler((
-                    (context, channel, updatedArgs) => { }), (context, newChannel) => { }));
+                    (context, channel, updatedArgs) =>
+                    {
+                        //this is invoked when the channel data is updated
+                        logger_.Info($"Channel was updated: {updatedArgs}");
+                    }), (context, newChannel) => 
+                    {
+                        //this is invoke when the channel is changed
+                        logger_.Info($"Channel is {newChannel.Name}");
+                    }));
             }
 
             Glue42 = glue;
@@ -97,7 +111,7 @@ namespace GlazorWebAssembly
 
         private async Task<string> GetUsername()
         {
-            string username = string.Empty;
+            var username = string.Empty;
 
             while (string.IsNullOrEmpty(username) || string.IsNullOrWhiteSpace(username))
             {
@@ -107,10 +121,15 @@ namespace GlazorWebAssembly
             return username;
         }
 
-        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, IGlueDispatcher dispatcher, string windowId)
+        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
         {
+            // create dispatcher for the hosted window
+            IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
+
+            // get a dummy window factory that is for hosted windows
             var glueWindowFactory = glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher));
 
+            //obtain the main window
             return glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
                 builder => builder.WithId(windowId).WithChannelSupport(true));
         }
