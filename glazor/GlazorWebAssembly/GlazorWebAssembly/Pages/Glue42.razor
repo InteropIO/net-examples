@@ -1,7 +1,8 @@
 ﻿@page "/glue"
+@using Glue.Transport
+@using Glue.Logging
 @using Glue.AppManager
 @using Glue.Channels
-@using Glue.Logging
 @inject IGlueLoggerFactory GlueLoggerFactory
 @inject GlueProvider glueProvider
 
@@ -32,47 +33,64 @@
 </div>
 
 <div class="row">
-    <div class="col">
-        @interopMessage
-    </div>
+    <div class="col-sm-1"><strong>Endpoint</strong></div>
+    <div class="col">@serverInterop</div>
+</div>
+
+<div class="row">
+    <div class="col-sm-1"><strong>Invokes</strong></div>
+    <div class="col">@clientInterop</div>
 </div>
 
 
 @code{
     private IGlue42Base glue_;
-    string methodName = "glazor";
+    readonly string methodName = "glazor";
 
     private async Task RegisterMethod()
     {
         await EnsureGlue().ConfigureAwait(false);
         await glue_.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
         {
+            serverInterop = $"Last invocation from {context.Caller.ApplicationName}: {context.Arguments.AsString()}";
             await context.ResultBuilder.Succeed().ConfigureAwait(false);
         }).ConfigureAwait(false);
 
-        interopMessage = string.Empty;
-        interopMessage = $"Registered method: {methodName}";
+        serverInterop = string.Empty;
+        serverInterop = $"Registered method: {methodName}";
     }
 
-    string interopMessage = string.Empty;
+    string serverInterop = string.Empty;
+    string clientInterop = string.Empty;
 
     private async Task InvokeMethod()
     {
         await EnsureGlue().ConfigureAwait(false);
-        var invocationResult = await glue_.Interop.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+        var invocationResult = await glue_.Interop.Invoke(methodName, new Dictionary<string, object>
+        {
+            {
+                "X",
+                new {Y = "inner"}
+            },
+            {
+                "more_info",
+                new {When = DateTime.UtcNow}
+            }
+        }).ConfigureAwait(false);
 
         var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
 
-        interopMessage = string.Empty;
-        interopMessage = $"Invoked method: {methodName} with status: {status}";
+        clientInterop = string.Empty;
+        clientInterop = $"Invoked method: {methodName} with status: {status}";
     }
+
 }
 
-    @code {
-        string selectedInstrument = "";
+@code {
+    string selectedInstrument = "";
 
-        List<string> availableInstruments = new List<string>()
-{
+    readonly List<string> availableInstruments = new List<string>
+    {
         "VOD:LN",
         "BARC:LN",
         "BMW:GR",
@@ -85,7 +103,7 @@
         "FB:US"
     };
 
-    }
+}
 
 @code
 {
@@ -99,6 +117,7 @@
 }
 
 @code {
+
     private async Task SetInstrument()
     {
         await EnsureGlue().ConfigureAwait(false);
@@ -115,12 +134,13 @@
         {
             var redChannel = await glue_.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
 
-             channelContext = glue_.Channels.JoinChannel(redChannel);
+            channelContext = glue_.Channels.JoinChannel(redChannel);
         }
 
         await channelContext.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
     }
-    }
+
+}
 
 @code
 {
