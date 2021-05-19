@@ -25,19 +25,23 @@ namespace WindowsFormsDemo
 
             var initOptions = new InitializeOptions() { ApplicationName = "MyWinFormsApp" };
             //the lambda will be called when save layout is called
-            initOptions.SetSaveRestoreStateEndpoint(v => Task.FromResult(StateBox.Text));
+            initOptions.SetSaveRestoreStateEndpoint(v =>
+            {
+                //MyState is an arbitrary complex object in which you can save any type of data and restore it later
+                return Task.FromResult(new MyState() { Text = StateBox.Text, DateSaved = DateTime.UtcNow });
+            });
 
             Glue42.InitializeGlue(initOptions)
                 .ContinueWith(async glue =>
                 {
                     glue_ = glue.Result;
 
-                    //this will be called when the layout is restored
-                    var restoredState = glue_.GetRestoreState<string>();
+                    //restore the state when you need it
+                    var restoredState = glue_.GetRestoreState<MyState>();
 
                     if (restoredState != null)
                     {
-                        this.Invoke((Action)(() => StateBox.Text = restoredState));
+                        this.Invoke((Action)(() => StateBox.Text = restoredState.Text));
                     }
 
                     var window = await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsApp" });
