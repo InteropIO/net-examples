@@ -44,8 +44,19 @@ namespace WindowsFormsDemo
                         this.Invoke((Action)(() => StateBox.Text = restoredState.Text));
                     }
 
-                    var window = await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsApp" });
+                    Dispatch(async () => await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsApp" }));
+
+                    Dispatch(() => glue_.AppManager.RegisterWinFormsApp<FormChild, MyChildState, Form>(builder =>
+                        builder.WithTitle("FormChild")));
+
+                    Dispatch(() => glue_.AppManager.RegisterWinFormsApp<FormChild2, MyDateState, Form>(builder =>
+                        builder.WithTitle("FormChild2")));
                 });
+        }
+
+        private object Dispatch(Action action)
+        {
+            return this.Invoke(action);
         }
     }
 }
