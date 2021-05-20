@@ -21,8 +21,6 @@ namespace WindowsFormsChildAppsDemo
         {
             InitializeComponent();
 
-            Debugger.Launch();
-
             var initOptions = new InitializeOptions() { ApplicationName = "MyWinFormsApp" };
             //the lambda will be called when save layout is called
             initOptions.SetSaveRestoreStateEndpoint(v =>
