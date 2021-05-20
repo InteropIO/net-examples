@@ -1,7 +1,7 @@
 ﻿
-namespace WindowsFormsDemo
+namespace WindowsFormsChildAppsDemo
 {
-    partial class FormChild
+    partial class Form1
     {
         /// <summary>
         /// Required designer variable.
@@ -29,33 +29,33 @@ namespace WindowsFormsDemo
         /// </summary>
         private void InitializeComponent()
         {
-            this.redColorBtn = new System.Windows.Forms.Button();
+            this.StateBox = new System.Windows.Forms.TextBox();
             this.SuspendLayout();
             // 
-            // redColorBtn
+            // StateBox
             // 
-            this.redColorBtn.Location = new System.Drawing.Point(236, 160);
-            this.redColorBtn.Name = "redColorBtn";
-            this.redColorBtn.Size = new System.Drawing.Size(171, 66);
-            this.redColorBtn.TabIndex = 0;
-            this.redColorBtn.Text = "Fill the box with Red color";
-            this.redColorBtn.UseVisualStyleBackColor = true;
-            this.redColorBtn.Click += new System.EventHandler(this.redColorBtn_Click);
+            this.StateBox.Location = new System.Drawing.Point(274, 184);
+            this.StateBox.Name = "StateBox";
+            this.StateBox.Size = new System.Drawing.Size(274, 26);
+            this.StateBox.TabIndex = 0;
+            this.StateBox.Text = "This text will be saved and restored";
             // 
-            // FormChild
+            // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.redColorBtn);
-            this.Name = "FormChild";
-            this.Text = "FormChild";
+            this.Controls.Add(this.StateBox);
+            this.Name = "Form1";
+            this.Text = "Form1";
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Button redColorBtn;
+        private System.Windows.Forms.TextBox StateBox;
     }
 }
+

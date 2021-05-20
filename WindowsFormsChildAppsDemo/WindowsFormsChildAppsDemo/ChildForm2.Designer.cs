@@ -1,7 +1,7 @@
 ﻿
-namespace WindowsFormsDemo
+namespace WindowsFormsChildAppsDemo
 {
-    partial class FormChild2
+    partial class ChildForm2
     {
         /// <summary>
         /// Required designer variable.
@@ -35,20 +35,20 @@ namespace WindowsFormsDemo
             // StartDateLabel
             // 
             this.StartDateLabel.AutoSize = true;
-            this.StartDateLabel.Location = new System.Drawing.Point(333, 183);
+            this.StartDateLabel.Location = new System.Drawing.Point(358, 196);
             this.StartDateLabel.Name = "StartDateLabel";
-            this.StartDateLabel.Size = new System.Drawing.Size(120, 20);
+            this.StartDateLabel.Size = new System.Drawing.Size(92, 20);
             this.StartDateLabel.TabIndex = 0;
-            this.StartDateLabel.Text = "First start date: ";
+            this.StartDateLabel.Text = "Started on: ";
             // 
-            // FormChild2
+            // ChildForm2
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
             this.Controls.Add(this.StartDateLabel);
-            this.Name = "FormChild2";
-            this.Text = "FormChild2";
+            this.Name = "ChildForm2";
+            this.Text = "ChildForm2";
             this.ResumeLayout(false);
             this.PerformLayout();
 

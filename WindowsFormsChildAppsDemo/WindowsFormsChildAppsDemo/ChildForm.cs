@@ -12,11 +12,11 @@ using Tick42.AppManager;
 using Tick42.StartingContext;
 using Tick42.Windows;
 
-namespace WindowsFormsDemo
+namespace WindowsFormsChildAppsDemo
 {
-    public partial class FormChild : Form, IGlueApp<MyChildState, Form>
+    public partial class ChildForm : Form, IGlueApp<MyChildState, Form>
     {
-        public FormChild()
+        public ChildForm()
         {
             InitializeComponent();
         }
@@ -32,12 +32,12 @@ namespace WindowsFormsDemo
 
         public void Initialize(Form context, MyChildState state, Glue42 glue, GDStartingContext startingContext, IGlueWindow glueWindow)
         {
-            this.Invoke((Action) (() => this.BackColor = Color.FromName(state.Color)));
+            this.Invoke((Action)(() => this.BackColor = Color.FromName(state.Color)));
         }
 
         public Task<MyChildState> GetState()
         {
-            return Task.FromResult(new MyChildState() {Color = "Red"});
+            return Task.FromResult(new MyChildState() { Color = "Red" });
         }
     }
 }

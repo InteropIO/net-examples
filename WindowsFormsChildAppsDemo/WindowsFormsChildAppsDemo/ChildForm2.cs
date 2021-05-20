@@ -12,12 +12,12 @@ using Tick42.AppManager;
 using Tick42.StartingContext;
 using Tick42.Windows;
 
-namespace WindowsFormsDemo
+namespace WindowsFormsChildAppsDemo
 {
-    public partial class FormChild2 : Form, IGlueApp<MyDateState, Form>
+    public partial class ChildForm2 : Form, IGlueApp<MyDateState, Form>
     {
         private readonly DateTime initialDateTime_;
-        public FormChild2()
+        public ChildForm2()
         {
             InitializeComponent();
 
@@ -32,12 +32,12 @@ namespace WindowsFormsDemo
 
         public void Initialize(Form context, MyDateState state, Glue42 glue, GDStartingContext startingContext, IGlueWindow glueWindow)
         {
-            this.Invoke((Action) (() => StartDateLabel.Text = $"Started on: {state.Date}"));
+            this.Invoke((Action)(() => StartDateLabel.Text = $"Started on: {state.Date}"));
         }
 
         public Task<MyDateState> GetState()
         {
-            return Task.FromResult(new MyDateState() {Date = initialDateTime_});
+            return Task.FromResult(new MyDateState() { Date = initialDateTime_ });
         }
     }
 }

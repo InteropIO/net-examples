@@ -12,7 +12,7 @@ using Tick42;
 using Tick42.StartingContext;
 using Tick42.Windows;
 
-namespace WindowsFormsDemo
+namespace WindowsFormsChildAppsDemo
 {
     public partial class Form1 : Form
     {
@@ -44,7 +44,13 @@ namespace WindowsFormsDemo
                         this.Invoke((Action)(() => StateBox.Text = restoredState.Text));
                     }
 
-                    Dispatch(async () => await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsApp" }));
+                    Dispatch(async () => await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsChildrenFactory" }));
+
+                    Dispatch(() => glue_.AppManager.RegisterWinFormsApp<ChildForm, MyChildState, Form>(builder =>
+                        builder.WithTitle("WinFormChild")));
+
+                    Dispatch(() => glue_.AppManager.RegisterWinFormsApp<ChildForm2, MyDateState, Form>(builder =>
+                        builder.WithTitle("WinFormChild2")));
                 });
         }
 
