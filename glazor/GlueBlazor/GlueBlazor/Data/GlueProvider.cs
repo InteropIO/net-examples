@@ -17,7 +17,7 @@ using Glue.Windows;
 
 namespace GlueBlazor.Data
 {
-    public class GlueProvider : IDisposable
+    public class GlueProvider : IAsyncDisposable, IDisposable
     {
         private const string DefaultGatewayUri = "ws://127.0.0.1:8385";
         private readonly IGlueLoggerFactory glueLoggerFactory_;
@@ -25,7 +25,7 @@ namespace GlueBlazor.Data
         private readonly IJSRuntime jsRuntime_;
         private readonly IGlueLog logger_;
         private TaskCompletionSource<IGlue42Base> glueTcs_;
-        private bool isDisposed_ = false;
+        private long isDisposed_ = 0;
 
         public GlueProvider(IJSRuntime jsRuntime, IGlueLoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
@@ -169,26 +169,33 @@ namespace GlueBlazor.Data
 
         protected virtual async Task Dispose(bool dispose)
         {
-            if (!isDisposed_)
+            if (Interlocked.CompareExchange(ref isDisposed_, 1, 0) != 0 || !dispose)
             {
-                if (dispose)
-                {
-                    // dispose the peer
-                    if (Glue42 != null)
-                    {
-                        await Glue42.Interop.Peer.DisposeAsync().ConfigureAwait(false);
-                    }
-                }
+                return;
+            }
 
-                isDisposed_ = true;
+            // this service is being disposed
+            if (Glue42 != null)
+            {
+                await Glue42.Interop.Peer.DisposeAsync().ConfigureAwait(false);
             }
         }
 
         // this gets called when the blazor component is removed from the page e.g when you refresh the page
+        public async ValueTask DisposeAsync()
+        {
+            await Dispose(true).ConfigureAwait(false);
+            GC.SuppressFinalize(this);
+        }
+
         public async void Dispose()
         {
             await Dispose(true).ConfigureAwait(false);
-            GC.SuppressFinalize(true);
+            GC.SuppressFinalize(this);
+        }
+
+        ~GlueProvider()
+        {
         }
     }
 }
