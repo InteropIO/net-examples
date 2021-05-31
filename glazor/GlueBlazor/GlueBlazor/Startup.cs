@@ -1,5 +1,4 @@
 using GlueBlazor.Data;
-using GlueForNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
@@ -13,6 +12,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Glue.Logging;
+using Microsoft.Extensions.Logging;
 
 namespace GlueBlazor
 {
@@ -31,7 +32,9 @@ namespace GlueBlazor
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddTransient<GlueProvider>();
+            services.AddScoped<IGlueLoggerFactory, GlueLoggerFactory>(serviceProvider =>
+                new GlueLoggerFactory(serviceProvider.GetService<ILoggerFactory>()));
+            services.AddScoped<GlueProvider>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

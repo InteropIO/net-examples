@@ -1,49 +1,164 @@
-﻿using GlueForNetCore;
-using GlueForNetCore.AuthenticationProviders;
-using GlueForNetCore.GDStarting;
-using Microsoft.AspNetCore.Components;
+﻿using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Glue;
+using Glue.AppManager;
+using Glue.AuthenticationProviders;
+using Glue.Channels;
+using Glue.GDStarting;
+using Glue.Logging;
+using Glue.Transport;
+using Glue.Windows;
 
 namespace GlueBlazor.Data
 {
-    public class GlueProvider
+    public class GlueProvider : IDisposable
     {
+        private const string DefaultGatewayUri = "ws://127.0.0.1:8385";
+        private readonly IGlueLoggerFactory glueLoggerFactory_;
+
         private readonly IJSRuntime jsRuntime_;
-        public GlueProvider(IJSRuntime jsRuntime)
+        private readonly IGlueLog logger_;
+        private TaskCompletionSource<IGlue42Base> glueTcs_;
+        private bool isDisposed_ = false;
+
+        public GlueProvider(IJSRuntime jsRuntime, IGlueLoggerFactory loggerFactory, IServiceProvider serviceProvider)
         {
             jsRuntime_ = jsRuntime;
+
+            glueLoggerFactory_ ??= loggerFactory;
+            logger_ ??= glueLoggerFactory_.GetLogger(typeof(GlueProvider));
+
+            logger_.Info($"Initialized {nameof(GlueProvider)}");
         }
 
-        public static Glue42 Glue { get; private set; }
+        public IGlue42Base Glue42 { get; private set; }
 
-        public async Task<Glue42> InitGlue()
+        public IGlueWindow MainWindow { get; private set; }
+
+        public async Task<IGlueWindow> GetMainWindow()
         {
-            if (Glue != null)
+            await InitGlue().ConfigureAwait(false);
+
+            return MainWindow;
+        }
+
+        public async Task<IGlue42Base> InitGlue()
+        {
+            if (Interlocked.CompareExchange(ref glueTcs_,
+                    new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is
+                { } tcs)
             {
-                return Glue;
+                //already initialized
+                return await tcs.Task.ConfigureAwait(false);
             }
 
-            var options = new InitializeOptions();
+            logger_.Info("Initializing Glue");
+
+            InitializeOptions initOptions;
+
+            string windowId = null;
 
             try
             {
-                // U can use this sugar method or fill the initialize options yourself with the token and gd info
-                options = await Glue42.GetHostedGDOptions(async gwTokenFuncName => await jsRuntime_.InvokeAsync<string>(gwTokenFuncName, new object[0]), async gdInfoPropName => await GetJSProp<GDHostInfo>(gdInfoPropName).ConfigureAwait(false));
+                // try to get the GD hosted settings if this is started as a GD application (in order to do this u have to configure your own application in %localappdata%\tick42\gluedesktop\config\apps by adding a .json file for it
+                initOptions = await Glue42Base.GetHostedGDOptions(
+                    async tokenName => await jsRuntime_.InvokeAsync<string>(tokenName).ConfigureAwait(false),
+                    async gdInfoPropName =>
+                    {
+                        var gdHostInfo = await GetJSProp<GDHostInfo>(gdInfoPropName).ConfigureAwait(false);
+                        windowId = gdHostInfo.WindowId;
+                        return gdHostInfo;
+                    }).ConfigureAwait(false);
+                logger_.Info("Initializing Glue hosted in GD");
             }
             catch (Exception e)
             {
+                logger_.Info("Initializing Glue with username and app name");
+
+                // Something went wrong probably the application is started in the browser
+                var username = await GetPromptInput("user name").ConfigureAwait(false);
+
+                var appName = await GetPromptInput("app name").ConfigureAwait(false);
+
+                initOptions = new InitializeOptions
+                {
+                    AdvancedOptions = new AdvancedOptions
+                    {
+                        AuthenticationProvider = new GatewaySecretAuthenticationProvider(username, username)
+                    },
+                    // make sure application name is different for each scoped GlueProvider
+                    ApplicationName = appName
+                };
             }
 
-            var glue = await Glue42.InitializeGlue(options).ConfigureAwait(false);
+            // choose the socket client implementation that is web assembly friendly
+            initOptions.AdvancedOptions.SocketFactory = connection =>
+                new ClientSocket(new Uri(initOptions.GatewayUri ?? DefaultGatewayUri), new Configuration());
 
-            Glue = glue;
+            //initialize the logging factory
+            initOptions.LoggerFactory = DebugLoggerFactory.Instance;
+            initOptions.AppType = "window";
+
+            var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
+
+            if (windowId != null)
+            {
+                // This will be executed in hosted scenarios where we have information about the window
+                MainWindow = await RegisterMainWindow(glue, windowId);
+
+                MainWindow.ChannelContext?.Subscribe(new LambdaGlueChannelEventHandler((
+                    (context, channel, updatedArgs) =>
+                    {
+                        //this is invoked when the channel data is updated
+                        logger_.Info($"Channel was updated: {updatedArgs}");
+                    }), (context, newChannel) =>
+                    {
+                        //this is invoked when the channel is changed
+                        logger_.Info($"Channel is {newChannel.Name}");
+                    }));
+            }
+
+            Glue42 = glue;
+
+            glueTcs_.TrySetResult(glue);
 
             return glue;
+        }
+
+        private async Task<string> GetPromptInput(string promptId)
+        {
+            var input = string.Empty;
+
+            while (string.IsNullOrEmpty(input) || string.IsNullOrWhiteSpace(input))
+            {
+                input = await jsRuntime_.InvokeAsync<string>("prompt", $"Enter your GD {promptId}");
+            }
+
+            return input;
+        }
+
+        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
+        {
+            // create dispatcher for the hosted window
+            IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
+
+            // get a dummy window factory that is for hosted windows
+            var glueWindowFactory = glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher));
+
+            //obtain the main window
+            return glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
+                builder => builder.WithId(windowId).WithChannelSupport(true));
+        }
+
+        private IGlueDispatcher CreateGlueDispatcher(Dispatcher dispatcher)
+        {
+            return new AspNetDispatcher(dispatcher);
         }
 
         public async Task<T> GetJSProp<T>(string path)
@@ -51,6 +166,29 @@ namespace GlueBlazor.Data
             //ResolveValue is exposed in wwwroot/js/gd.js
             return await jsRuntime_.InvokeAsync<T>("ResolveValue", path);
         }
-    }
 
+        protected virtual async Task Dispose(bool dispose)
+        {
+            if (!isDisposed_)
+            {
+                if (dispose)
+                {
+                    // dispose the peer
+                    if (Glue42 != null)
+                    {
+                        await Glue42.Interop.Peer.DisposeAsync().ConfigureAwait(false);
+                    }
+                }
+
+                isDisposed_ = true;
+            }
+        }
+
+        // this gets called when the blazor component is removed from the page e.g when you refresh the page
+        public async void Dispose()
+        {
+            await Dispose(true).ConfigureAwait(false);
+            GC.SuppressFinalize(true);
+        }
+    }
 }

@@ -96,7 +96,7 @@
 }
 
 @code {
-    private Task<Glue42> GetGlue()
+    private Task<IGlue42Base> GetGlue()
         => glueProvider.InitGlue();
 }
 

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GlueNetCore" Version="0.0.6" />
+    <PackageReference Include="GlueBase" Version="0.0.3" />
   </ItemGroup>
 
 </Project>
