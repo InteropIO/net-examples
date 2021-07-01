@@ -11,9 +11,23 @@
     <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
     </div>
+
+    <div class="col-sm-2">
+        <label>Channel: </label>
+        <select @bind="selectedChannel">
+            <option value=""></option>
+
+            @foreach (var channel in channels)
+            {
+                <option value="@channel">@channel</option>
+            }
+        </select>
+    </div>
+
     <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
     </div>
+
     <div class="col-sm-2">
         <select @bind="selectedInstrument">
             <option value=""></option>
@@ -32,10 +46,28 @@
 </div>
 
 @code {
+
+    readonly List<string> channels = new(new[]
+    {
+        "Red",
+        "Green",
+        "Blue",
+        "Pink",
+        "Yellow",
+        "DarkYellow",
+        "Orange",
+        "Purple",
+        "Lime",
+        "Cyan"
+    });
+
+
     string selectedInstrument = "";
 
-    List<string> availableInstruments = new List<string>()
-{
+    string selectedChannel = "Red";
+
+    readonly List<string> availableInstruments = new()
+    {
         "VOD:LN",
         "BARC:LN",
         "BMW:GR",
@@ -53,21 +85,22 @@
 @code{
     IGlueInterop interop_;
     IGlueChannels channels_;
+
     protected override async Task OnInitializedAsync()
     {
         interop_ = await interopProvider.InitInterop().ConfigureAwait(false);
         channels_ = await interopProvider.InitChannels().ConfigureAwait(false);
+        await channels_.AwaitChannel("Red").ConfigureAwait(false);
     }
+
 }
 
 @code{
-    string methodName = "glazor";
+    readonly string methodName = "glazor";
+
     private async Task RegisterMethod()
     {
-        await interop_.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
-        {
-            await context.ResultBuilder.Succeed().ConfigureAwait(false);
-        }).ConfigureAwait(false);
+        await interop_.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
 
         interopMessage = string.Empty;
         interopMessage = $"Registered method: {methodName}";
@@ -84,17 +117,27 @@
         interopMessage = string.Empty;
         interopMessage = $"Invoked method: {methodName} with status: {status}";
     }
+
 }
 
 @code {
+
     private async Task SetInstrument()
     {
-        //Assuming that there is an application open and set to the Red channel it will change the instrument
+        if (string.IsNullOrWhiteSpace(selectedChannel))
+        {
+            return;
+        }
 
-        var redChannel = await channels_.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
 
-        var context = channels_.JoinChannel(redChannel);
-            
+    // await the channel by name
+        var channel = await channels_.AwaitChannel(selectedChannel).ConfigureAwait(false);
+
+    // get its writable context by joining it
+        var context = channels_.JoinChannel(channel);
+
+    //Assuming that there is an application open and set to the selected channel it will change the instrument
         await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
     }
+
 }
