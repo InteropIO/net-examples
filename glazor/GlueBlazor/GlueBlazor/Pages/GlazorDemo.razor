@@ -1,4 +1,12 @@
 ﻿@page "/glazordemo"
+@using System.Net
+@using Glue.Entities
+@using Glue.Transport
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@using System.IO
+@using Glue.Channels
+@using Glue.Logging
 @inject GlueProvider glueProvider
 @inject IJSRuntime js
 
@@ -26,6 +34,7 @@
             }
         </select>
     </div>
+
 </div>
 
 <div class="row">
@@ -34,11 +43,64 @@
     </div>
 </div>
 
+<table class="table" id="myTable">
+    <thead>
+    <tr>
+        <th>Sync</th>
+        <th>RIC</th>
+        <th>Shares</th>
+        <th>Price</th>
+        <th>Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    @if (data_ is null)
+    {
+        <p style="color:white;"><em>Loading . . .</em></p>
+    }
+    else
+    {
+        @foreach (PortfolioData pf in data_)
+        {
+            <tr>
+                <td><button @onclick="() => Sync(pf)">o</button></td>
+                <td>@pf.RIC</td>
+                <td>@pf.Shares</td>
+                <td>@pf.Price</td>
+                <td>@pf.Description</td>
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+
 @code {
+
+    Task Sync(PortfolioData pf)
+    {
+        return SetRicInChannel(pf.RIC);
+    }
+
+    class ClientData
+    {
+        public string Name { get; set; }
+        public T42Contact Contact { get; set; }
+        public double PortfolioValue { get; set; }
+        public IEnumerable<PortfolioData> Portfolio { get; internal set; }
+    }
+
+    class PortfolioData
+    {
+        public string RIC { get; set; }
+        public int Shares { get; set; }
+        public double Price { get; set; }
+        public string Description { get; set; }
+    }
+
     string selectedInstrument = "";
 
-    List<string> availableInstruments = new List<string>()
-{
+    List<string> availableInstruments = new List<string>
+    {
         "VOD:LN",
         "BARC:LN",
         "BMW:GR",
@@ -50,6 +112,71 @@
         "JPM:US",
         "FB:US"
     };
+
+    private List<PortfolioData> data_;
+
+    protected override async Task OnInitializedAsync()
+    {
+        data_ = await GetInstruments();
+    }
+
+    async Task<List<PortfolioData>> GetInstruments()
+    {
+        int max_attempts = 3;
+        while (max_attempts -- > 0)
+        {
+            try
+            {
+                var request = (HttpWebRequest) WebRequest.Create("http://localhost:22060/clients");
+                request.Method = "GET";
+                request.KeepAlive = true;
+                request.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
+
+                var gwSerializer = new GwProtocolSerializer(DebugLoggerFactory.Instance.GetLogger("Instruments"));
+                var response = (HttpWebResponse) await request.GetResponseAsync();
+
+                Stream responseStream = response.GetResponseStream();
+                if (responseStream == null)
+                {
+                    // reattempt
+                    continue;
+                }
+
+                using var sr = new StreamReader(responseStream);
+                string responseText = await sr.ReadToEndAsync();
+                JArray joResponse = JArray.Parse(responseText);
+                var clientDatas = joResponse.Select((dynamic jsonObject) =>
+                {
+                    var portfolioItems =
+                        JsonConvert.DeserializeObject<List<PortfolioData>>(
+                            (string) (jsonObject["context"]["portfolio"] + ""));
+                    if (portfolioItems == null)
+                    {
+                        return new ClientData();
+                    }
+
+                    double portfolioValue = portfolioItems.Select(pd => pd.Shares * pd.Price).Sum();
+                    string message = jsonObject + "";
+
+                    return new ClientData
+                    {
+                        Name = jsonObject["name"]["firstName"].Value + " " +
+                               jsonObject["name"]["lastName"].Value,
+                        Portfolio = portfolioItems,
+                        PortfolioValue = portfolioValue,
+                        Contact = gwSerializer.DeserializeMessage<T42Contact>(message)
+                    };
+                }).ToArray();
+
+                return clientDatas.OrderByDescending(d => d.Portfolio.Count()).First().Portfolio.ToList();
+            }
+            catch
+            {
+                await Task.Delay(1000);
+            }
+        }
+        return new List<PortfolioData>();
+    }
 }
 
 @code{
@@ -85,14 +212,30 @@
 @code {
     private async Task SetInstrument()
     {
-        var glue = await GetGlue().ConfigureAwait(false);
-
-        var redChannel = await glue.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
-
-        var context = glue.Channels.JoinChannel(redChannel);
-
-        await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+        await SetRicInChannel(selectedInstrument);
     }
+
+    private async Task SetRicInChannel(string ric)
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+        IGlueChannelContext context;
+        if (glueProvider.MainWindow is { } window)
+        {
+            context = window.ChannelContext;
+            if (context == null)
+            {
+                return;
+            }
+        }
+        else
+        {
+            var redChannel = await glue.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
+            context = glue.Channels.JoinChannel(redChannel);
+        }
+
+        await context.SetValue(ric, "partyPortfolio.ric").ConfigureAwait(false);
+    }
+
 }
 
 @code {
