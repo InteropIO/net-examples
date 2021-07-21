@@ -3,25 +3,29 @@
 @using Glue.Logging
 @using Glue.AppManager
 @using Glue.Channels
+@using Glue.Entities
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@using System.IO
 @inject IGlueLoggerFactory GlueLoggerFactory
 @inject GlueProvider glueProvider
 
 <h1>Glue demo</h1>
 
 <div class="row">
-    <div class="col-sm">
+    <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="RegisterMethod">Register Method</button>
     </div>
-    <div class="col-sm">
+    <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
     </div>
-    <div class="col-sm">
-        <button class="btn btn-primary btn-sm" @onclick="StartApplication">Start application</button>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="StartApplication">Start portfolio</button>
     </div>
-    <div class="col-sm">
+    <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
     </div>
-    <div class="col-md">
+    <div class="col-sm-2">
         <select @bind="selectedInstrument">
             <option value=""></option>
             @foreach (var instrument in availableInstruments)
@@ -30,66 +34,72 @@
             }
         </select>
     </div>
+
 </div>
 
 <div class="row">
-    <div class="col-sm-1"><strong>Endpoint</strong></div>
-    <div class="col">@serverInterop</div>
+    <div class="col">
+        @interopMessage
+    </div>
 </div>
 
-<div class="row">
-    <div class="col-sm-1"><strong>Invokes</strong></div>
-    <div class="col">@clientInterop</div>
-</div>
-
-
-@code{
-    private IGlue42Base glue_;
-    readonly string methodName = "glazor";
-
-    private async Task RegisterMethod()
-    {
-        await EnsureGlue().ConfigureAwait(false);
-        await glue_.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
+<table class="table" id="myTable">
+    <thead>
+        <tr>
+            <th>Sync</th>
+            <th>RIC</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (data_ is null)
         {
-            serverInterop = $"Last invocation from {context.Caller.ApplicationName}: {context.Arguments.AsString()}";
-            await context.ResultBuilder.Succeed().ConfigureAwait(false);
-        }).ConfigureAwait(false);
-
-        serverInterop = string.Empty;
-        serverInterop = $"Registered method: {methodName}";
-    }
-
-    string serverInterop = string.Empty;
-    string clientInterop = string.Empty;
-
-    private async Task InvokeMethod()
-    {
-        await EnsureGlue().ConfigureAwait(false);
-        var invocationResult = await glue_.Interop.Invoke(methodName, new Dictionary<string, object>
+            <p style="color: white;"><em>Loading . . .</em></p>
+        }
+        else
         {
+            @foreach (PortfolioData pf in data_)
             {
-                "X",
-                new {Y = "inner"}
-            },
-            {
-                "more_info",
-                new {When = DateTime.UtcNow}
+                <tr>
+                    <td><button @onclick="() => Sync(pf)">o</button></td>
+                    <td>@pf.RIC</td>
+                    <td>@pf.Shares</td>
+                    <td>@pf.Price</td>
+                    <td>@pf.Description</td>
+                </tr>
             }
-        }).ConfigureAwait(false);
-
-        var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
-
-        clientInterop = string.Empty;
-        clientInterop = $"Invoked method: {methodName} with status: {status}";
-    }
-
-}
+        }
+    </tbody>
+</table>
 
 @code {
+
+    Task Sync(PortfolioData pf)
+    {
+        return SetRicInChannel(pf.RIC);
+    }
+
+    class ClientData
+    {
+        public string Name { get; set; }
+        public T42Contact Contact { get; set; }
+        public double PortfolioValue { get; set; }
+        public IEnumerable<PortfolioData> Portfolio { get; internal set; }
+    }
+
+    class PortfolioData
+    {
+        public string RIC { get; set; }
+        public int Shares { get; set; }
+        public double Price { get; set; }
+        public string Description { get; set; }
+    }
+
     string selectedInstrument = "";
 
-    readonly List<string> availableInstruments = new List<string>
+    List<string> availableInstruments = new List<string>
     {
         "VOD:LN",
         "BARC:LN",
@@ -103,49 +113,139 @@
         "FB:US"
     };
 
+    private List<PortfolioData> data_;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        data_ = await GetInstruments();
+    }
+
+    async Task<List<PortfolioData>> GetInstruments()
+    {
+        var logger = GlueLoggerFactory.GetLogger("Instruments");
+        int max_attempts = 3;
+        while (max_attempts-- > 0)
+        {
+            try
+            {
+                var gwSerializer = new GwProtocolSerializer(DebugLoggerFactory.Instance.GetLogger("Instruments"));
+                var c = new HttpClient();
+                var responseStream = await c.GetStreamAsync("http://localhost:22060/clients");
+
+                using var sr = new StreamReader(responseStream);
+                string responseText = await sr.ReadToEndAsync();
+                JArray joResponse = JArray.Parse(responseText);
+                var clientDatas = joResponse.Select((dynamic jsonObject) =>
+                {
+                    var portfolioItems =
+                        JsonConvert.DeserializeObject<List<PortfolioData>>(
+                            (string) (jsonObject["context"]["portfolio"] + ""));
+                    if (portfolioItems == null)
+                    {
+                        return new ClientData();
+                    }
+
+                    double portfolioValue = portfolioItems.Select(pd => pd.Shares * pd.Price).Sum();
+                    string message = jsonObject + "";
+
+                    return new ClientData
+                    {
+                        Name = jsonObject["name"]["firstName"].Value + " " +
+                               jsonObject["name"]["lastName"].Value,
+                        Portfolio = portfolioItems,
+                        PortfolioValue = portfolioValue,
+                        Contact = gwSerializer.DeserializeMessage<T42Contact>(message)
+                    };
+                }).ToArray();
+
+                logger.Info($"Fetched {clientDatas.Length} client data");
+
+                return clientDatas.OrderByDescending(d => d.Portfolio.Count()).First().Portfolio.ToList();
+            }
+            catch(Exception e)
+            {
+                logger.Error($"Failed fetching instruments", e);
+                await Task.Delay(1000);
+            }
+        }
+        return new List<PortfolioData>();
+    }
 }
 
-@code
-{
-    private async Task StartApplication()
-    {
-        await EnsureGlue().ConfigureAwait(false);
-        var app = await glue_.AppManager.AwaitApplication(a => a.Name == "channelsclientportfolio").ConfigureAwait(false);
+@code{
+    string methodName = "glazor";
 
-        var instance = await app.Start(AppManagerContext.CreateNew(GlueLoggerFactory.GetLogger(nameof(StartApplication)))).ConfigureAwait(false);
+    private async Task RegisterMethod()
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+
+        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
+        {
+            await context.ResultBuilder.Succeed().ConfigureAwait(false);
+        }).ConfigureAwait(false);
+
+        interopMessage = string.Empty;
+        interopMessage = $"Registered method: {methodName}";
     }
+
+    string interopMessage = string.Empty;
+
+    private async Task InvokeMethod()
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+
+        var invocationResult = await glue.Interop.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+
+        var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
+
+        interopMessage = string.Empty;
+        interopMessage = $"Invoked method: {methodName} with status: {status}";
+    }
+
 }
 
 @code {
 
     private async Task SetInstrument()
     {
-        await EnsureGlue().ConfigureAwait(false);
+        await SetRicInChannel(selectedInstrument);
+    }
 
-        var mainWindow = await glueProvider.GetMainWindow().ConfigureAwait(false);
-
-        IGlueChannelContext channelContext = null;
-
-        if (mainWindow?.ChannelContext != null)
+    private async Task SetRicInChannel(string ric)
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+        IGlueChannelContext context;
+        if (glueProvider.MainWindow is { } window)
         {
-            channelContext = mainWindow.ChannelContext;
+            context = window.ChannelContext;
+            if (context == null)
+            {
+                return;
+            }
         }
         else
         {
-            var redChannel = await glue_.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
-
-            channelContext = glue_.Channels.JoinChannel(redChannel);
+            var redChannel = await glue.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
+            context = glue.Channels.JoinChannel(redChannel);
         }
 
-        await channelContext.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+        await context.SetValue(ric, "partyPortfolio.ric").ConfigureAwait(false);
     }
 
 }
 
-@code
-{
-    private async Task EnsureGlue()
+@code { private Task<IGlue42Base> GetGlue()
+            => glueProvider.InitGlue(); }
+
+@code {
+
+    private async Task StartApplication()
     {
-        glue_ ??= await glueProvider.InitGlue().ConfigureAwait(false);
+        var glue = await GetGlue().ConfigureAwait(false);
+        var app = await glue.AppManager.AwaitApplication(a => a.Name == "channelsclientportfolio").ConfigureAwait(false);
+
+        var instance = await app.Start<StartupWindowConfig>(a => a.WithChannel("Red")).ConfigureAwait(false);
     }
+
 }
