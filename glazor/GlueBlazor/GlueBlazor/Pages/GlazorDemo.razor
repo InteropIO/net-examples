@@ -1,5 +1,4 @@
 ﻿@page "/glazordemo"
-@using System.Net
 @using Glue.Entities
 @using Glue.Transport
 @using Newtonsoft.Json
@@ -127,20 +126,9 @@
         {
             try
             {
-                var request = (HttpWebRequest) WebRequest.Create("http://localhost:22060/clients");
-                request.Method = "GET";
-                request.KeepAlive = true;
-                request.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
-
                 var gwSerializer = new GwProtocolSerializer(DebugLoggerFactory.Instance.GetLogger("Instruments"));
-                var response = (HttpWebResponse) await request.GetResponseAsync();
-
-                Stream responseStream = response.GetResponseStream();
-                if (responseStream == null)
-                {
-                    // reattempt
-                    continue;
-                }
+                var c = new HttpClient();
+                var responseStream = await c.GetStreamAsync("http://localhost:22060/clients");
 
                 using var sr = new StreamReader(responseStream);
                 string responseText = await sr.ReadToEndAsync();
