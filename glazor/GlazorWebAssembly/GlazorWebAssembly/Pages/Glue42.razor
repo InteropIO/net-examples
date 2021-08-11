@@ -1,14 +1,17 @@
 ﻿@page "/glue"
-@using Glue.Transport
+@using SuperSocket.ClientEngine
 @using Glue.Logging
-@using Glue.AppManager
-@using Glue.Channels
-@using Glue.Entities
+@using Glue.Transport
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Linq
+@using Glue.Entities
+@using System.Reflection
 @using System.IO
+@using Glue.Channels
+@using Glue.AppManager
 @inject IGlueLoggerFactory GlueLoggerFactory
 @inject GlueProvider glueProvider
+@inject NavigationManager navigationManager_
 
 <h1>Glue demo</h1>
 
@@ -45,40 +48,55 @@
 
 <table class="table" id="myTable">
     <thead>
-        <tr>
-            <th>Sync</th>
-            <th>RIC</th>
-            <th>Shares</th>
-            <th>Price</th>
-            <th>Description</th>
-        </tr>
-    </thead>
-    <tbody>
+    <tr>
         @if (data_ is null)
         {
-            <p style="color: white;"><em>Loading . . .</em></p>
+            <th>Loading...</th>
         }
         else
         {
-            @foreach (PortfolioData pf in data_)
+            <th>Sync</th>
+            @foreach (var prop in data_.First().Properties)
             {
-                <tr>
-                    <td><button @onclick="() => Sync(pf)">o</button></td>
-                    <td>@pf.RIC</td>
-                    <td>@pf.Shares</td>
-                    <td>@pf.Price</td>
-                    <td>@pf.Description</td>
-                </tr>
+                <th id="@prop">@prop</th>
             }
         }
+    </tr>
+    </thead>
+    <tbody>
+    @if (data_ is null)
+    {
+        <p style="color: white;">
+            <em>Loading . . .</em>
+        </p>
+    }
+    else
+    {
+        @foreach (IPortfolioData pf in data_)
+        {
+            <tr>
+                <td>
+                    <button @onclick="() => Sync(pf)">o</button>
+                </td>
+                @foreach (var prop in pf.Properties)
+                {
+                    <td>@pf.GetPropertyValue(prop)</td>
+                }
+            </tr>
+        }
+    }
     </tbody>
 </table>
 
 @code {
 
-    Task Sync(PortfolioData pf)
+    Task Sync(IPortfolioData pf)
     {
-        return SetRicInChannel(pf.RIC);
+        if (pf is PortfolioData pfd)
+        {
+            return SetRicInChannel(pfd.RIC);
+        }
+        return Task.CompletedTask;
     }
 
     class ClientData
@@ -89,17 +107,53 @@
         public IEnumerable<PortfolioData> Portfolio { get; internal set; }
     }
 
-    class PortfolioData
+    interface IPortfolioData
     {
+        string[] Properties { get; }
+
+        object GetPropertyValue(string property);
+    }
+
+    public class CSVPortfolioData : IPortfolioData
+    {
+        private readonly string[] values_;
+
+        public CSVPortfolioData(string[] values)
+        {
+            values_ = values;
+        }
+
+        public static string[] Header { get; set; }
+
+        public string[] Properties => Header;
+
+        public object GetPropertyValue(string property)
+        {
+            return values_[Header.IndexOf(property, 0, Header.Length)];
+        }
+    }
+
+    class PortfolioData : IPortfolioData
+    {
+        private static readonly Dictionary<string, PropertyInfo> propertyInfos =
+            typeof(PortfolioData).GetProperties(BindingFlags.Instance | BindingFlags.Public).ToDictionary(p => p.Name, p => p);
+
         public string RIC { get; set; }
         public int Shares { get; set; }
         public double Price { get; set; }
         public string Description { get; set; }
+
+        string[] IPortfolioData.Properties => propertyInfos.Keys.ToArray();
+
+        public object GetPropertyValue(string property)
+        {
+            return propertyInfos[property].GetValue(this);
+        }
     }
 
     string selectedInstrument = "";
 
-    List<string> availableInstruments = new List<string>
+    readonly List<string> availableInstruments = new()
     {
         "VOD:LN",
         "BARC:LN",
@@ -113,15 +167,16 @@
         "FB:US"
     };
 
-    private List<PortfolioData> data_;
+    private List<IPortfolioData> data_;
 
     protected override async Task OnInitializedAsync()
     {
-
         data_ = await GetInstruments();
     }
 
-    async Task<List<PortfolioData>> GetInstruments()
+        const bool UseSampleData = false;
+
+    async Task<List<IPortfolioData>> GetInstruments()
     {
         var logger = GlueLoggerFactory.GetLogger("Instruments");
         int max_attempts = 3;
@@ -131,6 +186,12 @@
             {
                 var gwSerializer = new GwProtocolSerializer(DebugLoggerFactory.Instance.GetLogger("Instruments"));
                 var c = new HttpClient();
+
+                if (UseSampleData)
+                {
+                    return await GetSampleData(c);
+                }
+
                 var responseStream = await c.GetStreamAsync("http://localhost:22060/clients");
 
                 using var sr = new StreamReader(responseStream);
@@ -161,29 +222,54 @@
 
                 logger.Info($"Fetched {clientDatas.Length} client data");
 
-                return clientDatas.OrderByDescending(d => d.Portfolio.Count()).First().Portfolio.ToList();
+                return clientDatas.OrderByDescending(d => d.Portfolio.Count()).First().Portfolio.Cast<IPortfolioData>().ToList();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                logger.Error($"Failed fetching instruments", e);
+                logger.Error("Failed fetching instruments", e);
                 await Task.Delay(1000);
             }
         }
-        return new List<PortfolioData>();
+        return new List<IPortfolioData>();
     }
+
+    private async Task<List<IPortfolioData>> GetSampleData(HttpClient c)
+    {
+        var cs = await c.GetStreamAsync(navigationManager_.BaseUri + "/sample-data/cst_250.csv");
+        using var cssr = new StreamReader(cs);
+        bool header = true;
+        var data = new List<IPortfolioData>();
+        while (!cssr.EndOfStream)
+        {
+            var line = await cssr.ReadLineAsync();
+            if (line != null)
+            {
+                var csv = line.Split(',');
+                if (header)
+                {
+                    header = false;
+                    CSVPortfolioData.Header = csv;
+                }
+                else
+                {
+                    data.Add(new CSVPortfolioData(csv));
+                }
+            }
+        }
+
+        return data;
+    }
+
 }
 
 @code{
-    string methodName = "glazor";
+    readonly string methodName = "glazor";
 
     private async Task RegisterMethod()
     {
         var glue = await GetGlue().ConfigureAwait(false);
 
-        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
-        {
-            await context.ResultBuilder.Succeed().ConfigureAwait(false);
-        }).ConfigureAwait(false);
+        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
 
         interopMessage = string.Empty;
         interopMessage = $"Registered method: {methodName}";
@@ -235,8 +321,12 @@
 
 }
 
-@code { private Task<IGlue42Base> GetGlue()
-            => glueProvider.InitGlue(); }
+@code {
+
+    private Task<IGlue42Base> GetGlue()
+        => glueProvider.InitGlue();
+
+}
 
 @code {
 
