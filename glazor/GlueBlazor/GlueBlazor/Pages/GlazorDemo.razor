@@ -1,11 +1,11 @@
 ﻿@page "/glazordemo"
 @using Glue.Entities
+@using Glue.Logging
 @using Glue.Transport
 @using Newtonsoft.Json
 @using Newtonsoft.Json.Linq
 @using System.IO
 @using Glue.Channels
-@using Glue.Logging
 @inject GlueProvider glueProvider
 @inject IJSRuntime js
 
@@ -55,14 +55,18 @@
     <tbody>
     @if (data_ is null)
     {
-        <p style="color:white;"><em>Loading . . .</em></p>
+        <p style="color: white;">
+            <em>Loading . . .</em>
+        </p>
     }
     else
     {
         @foreach (PortfolioData pf in data_)
         {
             <tr>
-                <td><button @onclick="() => Sync(pf)">o</button></td>
+                <td>
+                    <button @onclick="() => Sync(pf)">o</button>
+                </td>
                 <td>@pf.RIC</td>
                 <td>@pf.Shares</td>
                 <td>@pf.Price</td>
@@ -98,7 +102,7 @@
 
     string selectedInstrument = "";
 
-    List<string> availableInstruments = new List<string>
+    readonly List<string> availableInstruments = new List<string>
     {
         "VOD:LN",
         "BARC:LN",
@@ -122,7 +126,7 @@
     async Task<List<PortfolioData>> GetInstruments()
     {
         int max_attempts = 3;
-        while (max_attempts -- > 0)
+        while (max_attempts-- > 0)
         {
             try
             {
@@ -165,18 +169,21 @@
         }
         return new List<PortfolioData>();
     }
+
 }
 
 @code{
-    string methodName = "glazor";
+    readonly string methodName = "glazor";
+
     private async Task RegisterMethod()
     {
         var glue = await GetGlue().ConfigureAwait(false);
 
-        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context =>
-        {
-            await context.ResultBuilder.Succeed().ConfigureAwait(false);
-        }).ConfigureAwait(false);
+        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName),
+            async context =>
+            {
+                await context.ResultBuilder.Succeed().ConfigureAwait(false);
+            }).ConfigureAwait(false);
 
         interopMessage = string.Empty;
         interopMessage = $"Registered method: {methodName}";
@@ -195,9 +202,11 @@
         interopMessage = string.Empty;
         interopMessage = $"Invoked method: {methodName} with status: {status}";
     }
+
 }
 
 @code {
+
     private async Task SetInstrument()
     {
         await SetRicInChannel(selectedInstrument);
@@ -227,11 +236,14 @@
 }
 
 @code {
+
     private Task<IGlue42Base> GetGlue()
         => glueProvider.InitGlue();
+
 }
 
 @code {
+
     private async Task StartApplication()
     {
         var glue = await GetGlue().ConfigureAwait(false);
@@ -239,4 +251,5 @@
 
         var instance = await app.Start<StartupWindowConfig>(a => a.WithChannel("Red")).ConfigureAwait(false);
     }
+
 }
