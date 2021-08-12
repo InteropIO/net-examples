@@ -8,7 +8,7 @@ using Tick42.StartingContext;
 namespace WPFApp
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    ///     Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
@@ -21,15 +21,16 @@ namespace WPFApp
 
         private void InitializeGlue()
         {
-            var initializeOptions = new InitializeOptions()
+            var initializeOptions = new InitializeOptions
             {
                 ApplicationName = "My Glue WPF Demo",
-                IncludedFeatures = GDFeatures.UseAppManager | GDFeatures.UseGlueWindows | GDFeatures.UseContexts | GDFeatures.UseNotifications | GDFeatures.UseMetrics,
+                IncludedFeatures = GDFeatures.UseAppManager | GDFeatures.UseGlueWindows | GDFeatures.UseContexts |
+                                   GDFeatures.UseNotifications | GDFeatures.UseMetrics,
                 InitializeTimeout = TimeSpan.FromSeconds(5)
             };
 
             Glue42.InitializeGlue(initializeOptions)
-                .ContinueWith((glue) =>
+                .ContinueWith(glue =>
                 {
                     //unable to register glue
                     if (glue.Status == TaskStatus.Faulted)
@@ -48,7 +49,6 @@ namespace WPFApp
 
                     //register glue
                     GetMainWindow()?.RegisterGlue(glueInstance);
-
                 }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 

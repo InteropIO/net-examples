@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Tick42;
 using Tick42.Contexts;
@@ -13,7 +11,7 @@ namespace SharedContextSub
     {
         static void Main(string[] args)
         {
-            var initializeOptions = new InitializeOptions()
+            var initializeOptions = new InitializeOptions
             {
                 ApplicationName = "Shared Context Subscriber",
                 IncludedFeatures = GDFeatures.UseContexts,
@@ -21,7 +19,7 @@ namespace SharedContextSub
             };
 
             Glue42.InitializeGlue(initializeOptions)
-                .ContinueWith((glue) =>
+                .ContinueWith(glue =>
                 {
                     //unable to register glue
                     if (glue.Status == TaskStatus.Faulted)
@@ -47,7 +45,7 @@ namespace SharedContextSub
             context.ContextUpdated += OnContextUpdated;
         }
 
-        private static void OnContextUpdated(object sender, Tick42.Contexts.ContextUpdatedEventArgs e)
+        private static void OnContextUpdated(object sender, ContextUpdatedEventArgs e)
         {
             Console.WriteLine("Context updated: " + new
             {

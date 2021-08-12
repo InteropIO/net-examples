@@ -7,6 +7,7 @@ using System.Windows.Media;
 using DOT.AGM.Core.Server;
 using DOT.AGM.Extensions;
 using DOT.AGM.Server;
+using DOT.AGM.Transport;
 using DOT.Core.Extensions;
 using Tick42;
 
@@ -18,45 +19,15 @@ namespace GlueStreamPublisher
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Dependency Properties
-
-        public static readonly DependencyProperty ConnectionStatusDescriptionProperty = DependencyProperty.Register("ConnectionStatusDescription", typeof(string), typeof(MainWindow));
-        public static readonly DependencyProperty ConnectionStatusColorProperty = DependencyProperty.Register("ConnectionStatusColor", typeof(Brush), typeof(MainWindow));
-
-        public string ConnectionStatusDescription
-        {
-            get
-            {
-                return GetValue(ConnectionStatusDescriptionProperty).ToString();
-            }
-            set
-            {
-                SetValue(ConnectionStatusDescriptionProperty, value);
-            }
-        }
-
-        public Brush ConnectionStatusColor
-        {
-            get
-            {
-                return (Brush)GetValue(ConnectionStatusColorProperty);
-            }
-            set
-            {
-                SetValue(ConnectionStatusColorProperty, value);
-            }
-        }
-
-        #endregion
-
         /// <summary>
         ///     Used for Glue42 streaming branches
         /// </summary>
-        private readonly List<string> _availableSymbols = new List<string>() { "EURUSD", "GOLD", "GOOG", "MSFT" };
+        private readonly List<string> _availableSymbols = new List<string> {"EURUSD", "GOLD", "GOOG", "MSFT"};
+
+        private readonly Dictionary<string, Timer> timer_ = new Dictionary<string, Timer>();
 
         private Glue42 _glue;
         private IServerEventStream stream_;
-        private readonly Dictionary<string, Timer> timer_ = new Dictionary<string, Timer>();
 
         public MainWindow()
         {
@@ -102,18 +73,20 @@ namespace GlueStreamPublisher
         {
             LogMessage($"Glue is now {e.Status.State}. StatusMessage: {e.Status.StatusMessage}");
 
-            var isGlueConnected = e.Status.State == DOT.AGM.Transport.TransportState.Connected ? true : false;
+            var isGlueConnected = e.Status.State == TransportState.Connected ? true : false;
             UpdateUI(isGlueConnected);
         }
 
-        private IEventStreamBranch SubscriptionRequestHandler(IServerEventStream stream, IEventStreamSubscriptionRequest request, object cookie)
+        private IEventStreamBranch SubscriptionRequestHandler(IServerEventStream stream,
+            IEventStreamSubscriptionRequest request, object cookie)
         {
             // validate the request
             // for demo purposes we have a reject argument sent by the subscriber
             bool shouldReject = request.SubscriptionContext.Arguments.GetValueByName("reject", v => v.AsBool);
             string symbol = request.SubscriptionContext.Arguments.GetValueByName("symbol", v => v.AsString());
 
-            LogMessage($"Subscription request from {request.Caller} for symbol {symbol} - {request.SubscriptionContext.Arguments.AsString()}");
+            LogMessage(
+                $"Subscription request from {request.Caller} for symbol {symbol} - {request.SubscriptionContext.Arguments.AsString()}");
 
             if (shouldReject || string.IsNullOrEmpty(symbol))
             {
@@ -125,7 +98,7 @@ namespace GlueStreamPublisher
                 request.Reject(smrb =>
                     smrb.SetMessage(rejectionMsg)
                         .SetContext(cb =>
-                            cb.AddValue("RejectionArgument", new[] { 5, 3, 2, 1, 2 })
+                            cb.AddValue("RejectionArgument", new[] {5, 3, 2, 1, 2})
                                 .AddValue("MoreRejectionArguments", "sdfgsdfg")).Build());
 
                 return null;
@@ -141,7 +114,8 @@ namespace GlueStreamPublisher
             return request.Accept(smrb => smrb.Build(), branchKey: symbol);
         }
 
-        private void SubscriberHandler(IServerEventStream stream, IEventStreamSubscriber subscriber, IEventStreamBranch branch, object cookie)
+        private void SubscriberHandler(IServerEventStream stream, IEventStreamSubscriber subscriber,
+            IEventStreamBranch branch, object cookie)
         {
             IEventStreamSubscriptionRequest request = subscriber.Subscription;
             // log the subscriber
@@ -156,7 +130,8 @@ namespace GlueStreamPublisher
                         b.GetSubscribers().Select(sb => sb.Subscription.Caller)))));
 
             // e.g. keep the subscriptions in a list
-            var subscriptionItem = $"{request.Caller.ApplicationName} {request.SubscriptionContext.Arguments.AsString()}";
+            var subscriptionItem =
+                $"{request.Caller.ApplicationName} {request.SubscriptionContext.Arguments.AsString()}";
             DispatchAction(() =>
             {
                 ListViewSubscriptions.Items.Add(subscriptionItem);
@@ -177,7 +152,8 @@ namespace GlueStreamPublisher
             LogMessage($"Removed subscriber {request.Caller} {request.SubscriptionContext.Arguments.AsString()}");
 
             // remove subscriptions when cancelled
-            var subscriptionItem = $"{request.Caller.ApplicationName} {request.SubscriptionContext.Arguments.AsString()}";
+            var subscriptionItem =
+                $"{request.Caller.ApplicationName} {request.SubscriptionContext.Arguments.AsString()}";
             DispatchAction(() => ListViewSubscriptions.Items.Remove(subscriptionItem));
         }
 
@@ -194,7 +170,8 @@ namespace GlueStreamPublisher
         private void OnTimerTick(object state)
         {
             // in here the state plays the role of 'updated branch'
-            if (!(state is string symbol) || stream_ == null || !stream_.TryGetBranch(out IEventStreamBranch branch, symbol))
+            if (!(state is string symbol) || stream_ == null ||
+                !stream_.TryGetBranch(out IEventStreamBranch branch, symbol))
             {
                 return;
             }
@@ -216,5 +193,27 @@ namespace GlueStreamPublisher
             ListViewSubscriptions.IsEnabled = isConnected;
             ListViewLogs.IsEnabled = isConnected;
         }
+
+        #region Dependency Properties
+
+        public static readonly DependencyProperty ConnectionStatusDescriptionProperty =
+            DependencyProperty.Register("ConnectionStatusDescription", typeof(string), typeof(MainWindow));
+
+        public static readonly DependencyProperty ConnectionStatusColorProperty =
+            DependencyProperty.Register("ConnectionStatusColor", typeof(Brush), typeof(MainWindow));
+
+        public string ConnectionStatusDescription
+        {
+            get => GetValue(ConnectionStatusDescriptionProperty).ToString();
+            set => SetValue(ConnectionStatusDescriptionProperty, value);
+        }
+
+        public Brush ConnectionStatusColor
+        {
+            get => (Brush) GetValue(ConnectionStatusColorProperty);
+            set => SetValue(ConnectionStatusColorProperty, value);
+        }
+
+        #endregion
     }
 }

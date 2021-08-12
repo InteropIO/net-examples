@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -8,6 +7,7 @@ using System.Windows.Media;
 using DOT.AGM;
 using DOT.AGM.Client;
 using DOT.AGM.Core.Client;
+using DOT.AGM.Transport;
 using DOT.Core.Extensions;
 using Tick42;
 
@@ -19,42 +19,10 @@ namespace GlueStreamSubscriber
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Dependency Properties
+        private IEventStream currentTicksStream_;
 
-        public static readonly DependencyProperty ConnectionStatusDescriptionProperty = DependencyProperty.Register("ConnectionStatusDescription", typeof(string), typeof(MainWindow));
-        public static readonly DependencyProperty ConnectionStatusColorProperty = DependencyProperty.Register("ConnectionStatusColor", typeof(Brush), typeof(MainWindow));
-
-        public string ConnectionStatusDescription
-        {
-            get
-            {
-                return GetValue(ConnectionStatusDescriptionProperty).ToString();
-            }
-            set
-            {
-                SetValue(ConnectionStatusDescriptionProperty, value);
-            }
-        }
-
-        public Brush ConnectionStatusColor
-        {
-            get
-            {
-                return (Brush)GetValue(ConnectionStatusColorProperty);
-            }
-            set
-            {
-                SetValue(ConnectionStatusColorProperty, value);
-            }
-        }
-
-        #endregion
-
-        private Glue42 _glue;
-        private IEventStream _currentTicksStream;
-        private IMethod _ticksEndpoint;
-
-        public List<string> AvailableSymbols { get; set; }
+        private Glue42 glue_;
+        private IMethod ticksEndpoint_;
 
         public MainWindow()
         {
@@ -62,16 +30,18 @@ namespace GlueStreamSubscriber
             DataContext = this;
             UpdateUI(false);
 
-            AvailableSymbols = new List<string>() { "EURUSD", "GOLD", "GOOG", "MSFT" };
+            AvailableSymbols = new List<string> {"EURUSD", "GOLD", "GOOG", "MSFT"};
         }
+
+        public List<string> AvailableSymbols { get; set; }
 
         internal void RegisterGlue(Glue42 glue)
         {
-            _glue = glue;
+            glue_ = glue;
             UpdateUI(true);
 
-            _glue.Interop.ConnectionStatusChanged += InteropConnectionStatusChanged;
-            _glue.Interop.EndpointStatusChanged += InteropEndpointStatusChanged;
+            glue_.Interop.ConnectionStatusChanged += InteropConnectionStatusChanged;
+            glue_.Interop.EndpointStatusChanged += InteropEndpointStatusChanged;
         }
 
         private void InteropEndpointStatusChanged(object sender, InteropEndpointStatusChangedEventArgs e)
@@ -80,12 +50,13 @@ namespace GlueStreamSubscriber
             var endpoint = e.InteropEndpoint;
 
             // filter only streaming endpoints called GlueDemoTickStream
-            if (endpoint.Definition.Name != "GlueDemoTickStream" || !endpoint.Definition.Flags.HasFlag(MethodFlags.SupportsStreaming) || !endpoint.IsValid)
+            if (endpoint.Definition.Name != "GlueDemoTickStream" ||
+                !endpoint.Definition.Flags.HasFlag(MethodFlags.SupportsStreaming) || !endpoint.IsValid)
             {
                 return;
             }
 
-            _ticksEndpoint = endpoint;
+            ticksEndpoint_ = endpoint;
             var symbol = ComboBoxSymbols.SelectedItem.ToString();
             SubscribeStream(symbol);
         }
@@ -93,13 +64,14 @@ namespace GlueStreamSubscriber
         private void SubscribeStream(string symbol)
         {
             //if there is already subscribed stream - unsubscribe it and subscribe for new symbol
-            _currentTicksStream?.Close();
-            
-            _glue.Interop.Subscribe(_ticksEndpoint,
+            currentTicksStream_?.Close();
+
+            glue_.Interop.Subscribe(ticksEndpoint_,
                     new ClientEventStreamHandler
                     {
                         // this lambda is invoked when the status of the stream has changed
-                        EventStreamStatusChanged = (info, status, cookie) => LogMessage($"{info.EventStreamingMethod.Name} to {info.Server} is {status}"),
+                        EventStreamStatusChanged = (info, status, cookie) =>
+                            LogMessage($"{info.EventStreamingMethod.Name} to {info.Server} is {status}"),
 
                         // this lambda is invoked when there is data published to the stream
                         EventHandler = (info, data, cookie) =>
@@ -118,27 +90,28 @@ namespace GlueStreamSubscriber
                     // additional settings - specify target await timeout
                     new TargetSettings().WithTargetAwaitTimeout(TimeSpan.FromSeconds(5)),
                     // stream settings, specifying that we accept 'personal' (out-of-band) stream pushes
-                    new ClientEventStreamSettings { AllowCallbacks = true, ReestablishStream = false }
-                    )
-                    .ContinueWith(eventStream =>
-                    {
-                        _currentTicksStream = eventStream.Status == TaskStatus.RanToCompletion ? eventStream.Result : null;
-                    });
+                    new ClientEventStreamSettings {AllowCallbacks = true, ReestablishStream = false}
+                )
+                .ContinueWith(eventStream =>
+                {
+                    currentTicksStream_ =
+                        eventStream.Status == TaskStatus.RanToCompletion ? eventStream.Result : null;
+                });
         }
 
         private void InteropConnectionStatusChanged(object sender, InteropStatusEventArgs e)
         {
             LogMessage($"Glue is now {e.Status.State}. StatusMessage: {e.Status.StatusMessage}");
 
-            var isGlueConnected = e.Status.State == DOT.AGM.Transport.TransportState.Connected ? true : false;
+            var isGlueConnected = e.Status.State == TransportState.Connected ? true : false;
             UpdateUI(isGlueConnected);
         }
 
         private void SymbolsSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_glue != null)
+            if (glue_ != null)
             {
-                var selectedSymbol = ((ComboBox)sender).SelectedItem.ToString();
+                var selectedSymbol = ((ComboBox) sender).SelectedItem.ToString();
                 SubscribeStream(selectedSymbol);
             }
         }
@@ -165,5 +138,27 @@ namespace GlueStreamSubscriber
             ListViewLogs.IsEnabled = isConnected;
             ComboBoxSymbols.IsEnabled = isConnected;
         }
+
+        #region Dependency Properties
+
+        public static readonly DependencyProperty ConnectionStatusDescriptionProperty =
+            DependencyProperty.Register("ConnectionStatusDescription", typeof(string), typeof(MainWindow));
+
+        public static readonly DependencyProperty ConnectionStatusColorProperty =
+            DependencyProperty.Register("ConnectionStatusColor", typeof(Brush), typeof(MainWindow));
+
+        public string ConnectionStatusDescription
+        {
+            get => GetValue(ConnectionStatusDescriptionProperty).ToString();
+            set => SetValue(ConnectionStatusDescriptionProperty, value);
+        }
+
+        public Brush ConnectionStatusColor
+        {
+            get => (Brush) GetValue(ConnectionStatusColorProperty);
+            set => SetValue(ConnectionStatusColorProperty, value);
+        }
+
+        #endregion
     }
 }

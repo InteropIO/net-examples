@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tick42;
@@ -17,22 +10,21 @@ namespace WindowsFormsDemo
     public partial class Form1 : Form
     {
         private Glue42 glue_;
+
         public Form1()
         {
             InitializeComponent();
 
-            Debugger.Launch();
-
-            var initOptions = new InitializeOptions() { ApplicationName = "MyWinFormsApp" };
+            var initOptions = new InitializeOptions {ApplicationName = "MyWinFormsApp"};
             //the lambda will be called when save layout is called
             initOptions.SetSaveRestoreStateEndpoint(v =>
             {
                 //MyState is an arbitrary complex object in which you can save any type of data and restore it later
-                return Task.FromResult(new MyState() { Text = StateBox.Text, DateSaved = DateTime.UtcNow });
+                return Task.FromResult(new MyState {Text = StateBox.Text, DateSaved = DateTime.UtcNow});
             });
 
             Glue42.InitializeGlue(initOptions)
-                .ContinueWith(glue =>
+                .ContinueWith(async glue =>
                 {
                     glue_ = glue.Result;
 
@@ -41,16 +33,16 @@ namespace WindowsFormsDemo
 
                     if (restoredState != null)
                     {
-                        this.Invoke((Action)(() => StateBox.Text = restoredState.Text));
+                        Invoke((Action) (() => StateBox.Text = restoredState.Text));
                     }
 
-                    Dispatch(async () => await glue_.GlueWindows.RegisterWindow(this.Handle, new GlueWindowOptions() { Title = "MyWinformsApp" }));
-                });
-        }
+                    // we can take the handle here because we have passed task scheduler
+                    // alternatively we can obtain the handle before initializing Glue
+                    IntPtr intPtr = Handle;
 
-        private object Dispatch(Action action)
-        {
-            return this.Invoke(action);
+                    await glue_.GlueWindows.RegisterWindow(intPtr,
+                        new GlueWindowOptions {Title = "MyWinformsApp"});
+                }, TaskScheduler.FromCurrentSynchronizationContext());
         }
     }
 }

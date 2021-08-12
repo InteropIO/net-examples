@@ -1,27 +1,19 @@
-﻿using Glue.Channels;
-using Glue.Contexts;
-using GlueForNetCore;
-using GlueForNetCore.AppManager;
-using GlueForNetCore.GDStarting;
-using GlueForNetCore.Windows;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Glue;
+using Glue.AppManager;
+using Glue.Channels;
+using Glue.Contexts;
+using Glue.GDStarting;
+using Glue.Windows;
 
 namespace MultiWindowWPFDemo
 {
     /// <summary>
-    /// Interaction logic for ClientPortfolioView.xaml
+    ///     Interaction logic for ClientPortfolioView.xaml
     /// </summary>
     public partial class ClientPortfolioView : Window, IGlueApp<ClientPortfolioView.State, MainWindow>,
         IGlueChannelEventHandler<T42Contact>
@@ -35,7 +27,7 @@ namespace MultiWindowWPFDemo
         public ClientPortfolioView(string colorAsString)
         {
             InitializeComponent();
-            var color = (Color)ColorConverter.ConvertFromString(colorAsString);
+            var color = (Color) ColorConverter.ConvertFromString(colorAsString);
             var items = ColorSelector.Items;
 
             for (int i = 0; i < items.Count; i++)
@@ -48,27 +40,17 @@ namespace MultiWindowWPFDemo
                     ColorSelector.SelectedIndex = i;
                 }
             }
+
             ColorRectangle.Fill = new SolidColorBrush(color);
 
             ColorSelector.SelectionChanged += ColorSelector_SelectionChanged;
         }
 
-        private void ColorSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
-        {
-            var currSelection = e.AddedItems.Count > 0 ? e.AddedItems[0] : null;
-
-            if (currSelection != null)
-            {
-                var rect = (Rectangle)currSelection;
-                ColorRectangle.Fill = rect.Fill;
-            }
-        }
-
-        public void Initialize(MainWindow context, State state, Glue42 glue, GDStartingContext startingContext,
+        public void Initialize(MainWindow context, State state, IGlue42Base glue, GDStartingContext startingContext,
             IGlueWindow glueWindow)
         {
             var colorAsString = state?.RectangleColor ?? "#FFFFFF";
-            var color = (Color)ColorConverter.ConvertFromString(colorAsString);
+            var color = (Color) ColorConverter.ConvertFromString(colorAsString);
             var items = ColorSelector.Items;
 
             for (int i = 0; i < items.Count; i++)
@@ -88,7 +70,7 @@ namespace MultiWindowWPFDemo
 
         public async Task<State> GetState()
         {
-            return this.Dispatcher.Invoke(() =>
+            return Dispatcher.Invoke(() =>
             {
                 var rectangleColor = (ColorRectangle.Fill as SolidColorBrush).Color.ToString();
                 var state = new State
@@ -117,6 +99,17 @@ namespace MultiWindowWPFDemo
         public void HandleUpdate(IGlueChannelContext channelContext, IGlueChannel channel,
             ContextUpdatedEventArgs updateArgs)
         {
+        }
+
+        private void ColorSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var currSelection = e.AddedItems.Count > 0 ? e.AddedItems[0] : null;
+
+            if (currSelection != null)
+            {
+                var rect = (Rectangle) currSelection;
+                ColorRectangle.Fill = rect.Fill;
+            }
         }
 
         public class State

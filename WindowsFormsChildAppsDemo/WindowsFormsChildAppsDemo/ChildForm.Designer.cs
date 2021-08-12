@@ -29,25 +29,27 @@ namespace WindowsFormsChildAppsDemo
         /// </summary>
         private void InitializeComponent()
         {
-            this.redColorBtn = new System.Windows.Forms.Button();
+            this.btnRndColor = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
-            // redColorBtn
+            // btnRndColor
             // 
-            this.redColorBtn.Location = new System.Drawing.Point(328, 176);
-            this.redColorBtn.Name = "redColorBtn";
-            this.redColorBtn.Size = new System.Drawing.Size(171, 58);
-            this.redColorBtn.TabIndex = 0;
-            this.redColorBtn.Text = "Fill the background with Red color";
-            this.redColorBtn.UseVisualStyleBackColor = true;
-            this.redColorBtn.Click += new System.EventHandler(this.redColorBtn_Click);
+            this.btnRndColor.Location = new System.Drawing.Point(292, 141);
+            this.btnRndColor.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
+            this.btnRndColor.Name = "btnRndColor";
+            this.btnRndColor.Size = new System.Drawing.Size(152, 46);
+            this.btnRndColor.TabIndex = 0;
+            this.btnRndColor.Text = "Fill the background with Random color";
+            this.btnRndColor.UseVisualStyleBackColor = true;
+            this.btnRndColor.Click += new System.EventHandler(this.BtnRndColorClick);
             // 
             // ChildForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.redColorBtn);
+            this.ClientSize = new System.Drawing.Size(711, 360);
+            this.Controls.Add(this.btnRndColor);
+            this.Margin = new System.Windows.Forms.Padding(3, 2, 3, 2);
             this.Name = "ChildForm";
             this.Text = "ChildForm";
             this.ResumeLayout(false);
@@ -56,6 +58,6 @@ namespace WindowsFormsChildAppsDemo
 
         #endregion
 
-        private System.Windows.Forms.Button redColorBtn;
+        private System.Windows.Forms.Button btnRndColor;
     }
 }

@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Tick42;
-using Tick42.Contexts;
 using Tick42.StartingContext;
 
 namespace SharedContextPub
@@ -14,8 +10,7 @@ namespace SharedContextPub
     {
         static void Main(string[] args)
         {
-
-            var initializeOptions = new InitializeOptions()
+            var initializeOptions = new InitializeOptions
             {
                 ApplicationName = "Shared Context Publisher",
                 IncludedFeatures = GDFeatures.UseContexts,
@@ -23,7 +18,7 @@ namespace SharedContextPub
             };
 
             Glue42.InitializeGlue(initializeOptions)
-                .ContinueWith((glue) =>
+                .ContinueWith(glue =>
                 {
                     //unable to register glue
                     if (glue.Status == TaskStatus.Faulted)
@@ -48,12 +43,13 @@ namespace SharedContextPub
 
             // update TestContext every second incrementing the value of data
             var context = await glue.Contexts.GetContext("TestContext");
-            ThreadPool.QueueUserWorkItem((c) =>
+            var _ = Task.Run(async () =>
             {
                 while (true)
                 {
-                    Thread.Sleep(1000);
+                    await Task.Delay(1000);
                     context["data"] = data++;
+                    Console.WriteLine($"Updated with {data}");
                 }
             });
         }

@@ -1,44 +1,26 @@
-﻿using Glue.Transport;
-using GlueForNetCore;
-using GlueForNetCore.AppManager;
-using GlueForNetCore.GDStarting;
-using GlueForNetCore.Windows;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
-using System.Windows.Controls;
-using System.Windows.Shapes;
 using System.Windows.Media;
-using System.Diagnostics;
+using System.Windows.Shapes;
+using Glue;
+using Glue.Helpers;
+using Glue.Logging;
+using Glue.Transport;
+using Glue.Windows;
 
 namespace MultiWindowWPFDemo
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    ///     Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        static MainWindow()
-        {
-            log4net.Config.XmlConfigurator.Configure();
-
-        }
+        private readonly string ChildWindowAppName = "ColorChildNETCore";
 
         private Glue42 glue42_;
         private IGlueWindow mainWindow_;
-        public class AppState
-        {
-            public int SelectedIndex { get; set; }
-        }
-
-        public string GlueWindowId { get; set; }
-        public string TabGroupId { get; set; }
-
-        private readonly string ChildWindowAppName = "ColorChildNETCore";
 
         public MainWindow()
         {
@@ -51,23 +33,24 @@ namespace MultiWindowWPFDemo
             var initializeOptions = new InitializeOptions();
 
             initializeOptions.SetSaveRestoreStateEndpoint(_ =>
-            new AppState
-            {
-                SelectedIndex = ColorSelector.SelectedIndex
-            }.AsCompletedTask()
-            ,
+                    new AppState
+                    {
+                        SelectedIndex = ColorSelector.SelectedIndex
+                    }.AsCompletedTask()
+                ,
                 state =>
                 {
                     AppState restoreState = state;
                     // restore state
                     ColorSelector.SelectedIndex = restoreState.SelectedIndex;
-                }, Dispatcher);
+                }, Dispatcher.AsGlueDispatcher());
 
 
             Glue42.InitializeGlue(new InitializeOptions
-            {
-                ApplicationName = "MultiWindowDemoNETCore"
-            })
+                {
+                    ApplicationName = "MultiWindowDemoNETCore",
+                    LoggerFactory = DebugLoggerFactory.Instance
+                })
                 .ContinueWith(async r =>
                 {
                     if (r.Status != TaskStatus.RanToCompletion)
@@ -78,24 +61,28 @@ namespace MultiWindowWPFDemo
                     {
                         glue42_ = r.Result;
 
-                        mainWindow_ = await glue42_.GlueWindows.RegisterWindow(this, builder => builder.WithTitle("MultiWindowDemoNETCore").WithChannelSupport(true).WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId))).ConfigureAwait(false);
+                        mainWindow_ = await glue42_.GlueWindows.RegisterStartupWindow(this, "MultiWindowDemoNETCore",
+                                builder => builder.WithChannelSupport(true)
+                                    .WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId)))
+                            .ConfigureAwait(false);
 
                         glue42_.AppManager.RegisterWPFApp<ClientPortfolioView, ClientPortfolioView.State, MainWindow>(
                             app =>
                             {
                                 app.WithName(ChildWindowAppName)
-                                 .WithTitle(ChildWindowAppName)
-                                 .WithContext(this)
-                                 .WithType(GlueWindowType.Tab).WithFolder("MultiWindowNETCoreChildApps");
+                                    .WithTitle(ChildWindowAppName)
+                                    .WithContext(this)
+                                    .WithType(GlueWindowType.Tab).WithFolder("MultiWindowNETCoreChildApps");
                             });
 
                         await glue42_.AppManager
-                            .AwaitApplication((app) => app.Name == ChildWindowAppName).ConfigureAwait(false);
-
-                        var gwOptions = glue42_.GetStartupWindowOptions("MultiWindowDemoNETCore");
+                            .AwaitApplication(app => app.Name == ChildWindowAppName).ConfigureAwait(false);
                     }
                 });
         }
+
+        public string GlueWindowId { get; set; }
+        public string TabGroupId { get; set; }
 
         private void Portfolio_Click(object sender, RoutedEventArgs e)
         {
@@ -103,7 +90,7 @@ namespace MultiWindowWPFDemo
 
             if (ColorSelector.SelectedItem != null)
             {
-                currColor = ((SolidColorBrush)((Rectangle)ColorSelector.SelectedItem).Fill).Color.ToString();
+                currColor = ((SolidColorBrush) ((Rectangle) ColorSelector.SelectedItem).Fill).Color.ToString();
             }
 
             var clientPortfolioView = new ClientPortfolioView(currColor);
@@ -113,22 +100,29 @@ namespace MultiWindowWPFDemo
             glue42_.GlueWindows.RegisterWindow(clientPortfolioView,
                 builder =>
                 {
-                    builder.WithTitle(ChildWindowAppName).WithType(GlueWindowType.Tab).WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId));
+                    builder.WithTitle(ChildWindowAppName).WithType(GlueWindowType.Tab)
+                        .WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId));
                 }).ContinueWith(r =>
-                {
-                    glue42_.AppManager.RegisterInstance(ChildWindowAppName, r.Result.Id, clientPortfolioView, synchronizationContext)
-                        .ContinueWith(instanceTask =>
+            {
+                glue42_.AppManager.RegisterInstance(ChildWindowAppName, r.Result.Id, clientPortfolioView,
+                        synchronizationContext)
+                    .ContinueWith(instanceTask =>
+                    {
+                        if (instanceTask.Status != TaskStatus.RanToCompletion)
                         {
-                            if (instanceTask.Status != TaskStatus.RanToCompletion)
-                            {
-                                // register instance failed
-                            }
-                            else
-                            {
-                                var instance = instanceTask.Result;
-                            }
-                        });
-                });
+                            // register instance failed
+                        }
+                        else
+                        {
+                            var instance = instanceTask.Result;
+                        }
+                    });
+            });
+        }
+
+        public class AppState
+        {
+            public int SelectedIndex { get; set; }
         }
     }
 }

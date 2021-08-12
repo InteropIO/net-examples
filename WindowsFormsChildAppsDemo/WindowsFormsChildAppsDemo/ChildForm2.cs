@@ -1,10 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Tick42;
@@ -17,6 +11,7 @@ namespace WindowsFormsChildAppsDemo
     public partial class ChildForm2 : Form, IGlueApp<MyDateState, Form>
     {
         private readonly DateTime initialDateTime_;
+
         public ChildForm2()
         {
             InitializeComponent();
@@ -30,14 +25,18 @@ namespace WindowsFormsChildAppsDemo
         {
         }
 
-        public void Initialize(Form context, MyDateState state, Glue42 glue, GDStartingContext startingContext, IGlueWindow glueWindow)
+        public void Initialize(Form context, MyDateState state, Glue42 glue, GDStartingContext startingContext,
+            IGlueWindow glueWindow)
         {
-            this.Invoke((Action)(() => StartDateLabel.Text = $"Started on: {state.Date}"));
+            if (state?.Date is DateTime date)
+            {
+                StartDateLabel.Text = $"Started on: {state.Date}";
+            }
         }
 
         public Task<MyDateState> GetState()
         {
-            return Task.FromResult(new MyDateState() { Date = initialDateTime_ });
+            return Task.FromResult(new MyDateState {Date = initialDateTime_});
         }
     }
 }
