@@ -1,5 +1,5 @@
 ﻿@page "/glazordemo"
-@inject InteropProvider interopProvider
+@inject GlueProvider glueProvider_
 @inject IJSRuntime js
 
 <h1>Glazor demo</h1>
@@ -83,14 +83,12 @@
 }
 
 @code{
-    IGlueInterop interop_;
-    IGlueChannels channels_;
+    IGlue42Base glue_;
 
     protected override async Task OnInitializedAsync()
     {
-        interop_ = await interopProvider.InitInterop().ConfigureAwait(false);
-        channels_ = await interopProvider.InitChannels().ConfigureAwait(false);
-        await channels_.AwaitChannel("Red").ConfigureAwait(false);
+        glue_ = await glueProvider_.InitGlue().ConfigureAwait(false);
+        await glue_.Channels.AwaitChannel("Red").ConfigureAwait(false);
     }
 
 }
@@ -100,7 +98,7 @@
 
     private async Task RegisterMethod()
     {
-        await interop_.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
+        await glue_.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
 
         interopMessage = string.Empty;
         interopMessage = $"Registered method: {methodName}";
@@ -110,7 +108,7 @@
 
     private async Task InvokeMethod()
     {
-        var invocationResult = await interop_.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+        var invocationResult = await glue_.Interop.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
 
         var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
 
@@ -131,10 +129,10 @@
 
 
     // await the channel by name
-        var channel = await channels_.AwaitChannel(selectedChannel).ConfigureAwait(false);
+        var channel = await glue_.Channels.AwaitChannel(selectedChannel).ConfigureAwait(false);
 
     // get its writable context by joining it
-        var context = channels_.JoinChannel(channel);
+        var context = glue_.Channels.JoinChannel(channel);
 
     //Assuming that there is an application open and set to the selected channel it will change the instrument
         await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);

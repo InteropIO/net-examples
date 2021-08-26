@@ -1,15 +1,12 @@
 using GlazorDemoNet5.Data;
+using GlazorDemoNet5.Logging;
+using Glue.Logging;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace GlazorDemoNet5
 {
@@ -28,7 +25,9 @@ namespace GlazorDemoNet5
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            services.AddTransient<InteropProvider>();
+            services.AddScoped<IGlueLoggerFactory, GlueLoggerFactory>(serviceProvider =>
+                new GlueLoggerFactory(serviceProvider.GetService<ILoggerFactory>()));
+            services.AddScoped<GlueProvider>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
