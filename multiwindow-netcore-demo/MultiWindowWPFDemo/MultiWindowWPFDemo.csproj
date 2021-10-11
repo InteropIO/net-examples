@@ -8,6 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GlueNetCore" Version="0.0.7" />
+    <PackageReference Include="GlueNetCore" Version="0.0.10" />
   </ItemGroup>
 </Project>
