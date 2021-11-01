@@ -99,7 +99,7 @@ namespace GlazorWebAssembly
 
             //initialize the logging factory
             initOptions.LoggerFactory = glueLoggerFactory_;
-            initOptions.AppType = "window";
+            initOptions.AppDefinition = new AppDefinition { ApplicationType = ApplicationType.Window };
 
             var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
 
