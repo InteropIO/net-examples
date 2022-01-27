@@ -33,5 +33,7 @@ namespace GlazorWebAssembly
         {
             dispatcher_.InvokeAsync(action);
         }
+
+        public int DispatcherThreadId => -1;
     }
 }
