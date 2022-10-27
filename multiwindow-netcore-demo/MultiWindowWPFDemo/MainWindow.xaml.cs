@@ -64,7 +64,7 @@ namespace MultiWindowWPFDemo
                                 builder => builder.WithChannelSupport(true)
                                     .WithPlacement(
                                         new GlueWindowScreenPlacement().WithBounds(
-                                            new GlueWindowBounds(50, 50, 600, 600))))
+                                            new GlueWindowBounds(50, 50, 600, 600)).WithTabGroupId(TabGroupId)))
                             .ConfigureAwait(false);
 
                         await glue42_.AppManager
@@ -105,7 +105,7 @@ namespace MultiWindowWPFDemo
                     builder.WithTitle(ChildWindowAppName).WithType(GlueWindowType.Tab)
                         .WithPlacement(
                             new GlueWindowScreenPlacement().WithBounds(
-                                new GlueWindowBounds(70, 70, 250, 150)));
+                                new GlueWindowBounds(70, 70, 250, 150)).WithTabGroupId(TabGroupId));
                 }).ContinueWith(r =>
             {
                 glue42_.AppManager.RegisterInstance(ChildWindowAppName, r.Result.Id, clientPortfolioView,
