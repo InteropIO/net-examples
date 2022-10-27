@@ -10,17 +10,18 @@ namespace WindowsFormsDemo
     public partial class Form1 : Form
     {
         private Glue42 glue_;
+        private IGlueWindow glueWindow_;
 
         public Form1()
         {
             InitializeComponent();
 
-            var initOptions = new InitializeOptions {ApplicationName = "MyWinFormsApp"};
+            var initOptions = new InitializeOptions { ApplicationName = "MyWinFormsApp", AwaitAndTrackGlue = true };
             //the lambda will be called when save layout is called
             initOptions.SetSaveRestoreStateEndpoint(v =>
             {
                 //MyState is an arbitrary complex object in which you can save any type of data and restore it later
-                return Task.FromResult(new MyState {Text = StateBox.Text, DateSaved = DateTime.UtcNow});
+                return Task.FromResult(new MyState { Text = StateBox.Text, DateSaved = DateTime.UtcNow });
             });
 
             Glue42.InitializeGlue(initOptions)
@@ -33,15 +34,12 @@ namespace WindowsFormsDemo
 
                     if (restoredState != null)
                     {
-                        Invoke((Action) (() => StateBox.Text = restoredState.Text));
+                        Invoke((Action)(() => StateBox.Text = restoredState.Text));
                     }
 
                     // we can take the handle here because we have passed task scheduler
                     // alternatively we can obtain the handle before initializing Glue
-                    IntPtr intPtr = Handle;
-
-                    await glue_.GlueWindows.RegisterWindow(intPtr,
-                        new GlueWindowOptions {Title = "MyWinformsApp"});
+                    glueWindow_ = await glue_.GlueWindows.RegisterStartupWindow(Handle, "My WinForms App");
                 }, TaskScheduler.FromCurrentSynchronizationContext());
         }
     }
