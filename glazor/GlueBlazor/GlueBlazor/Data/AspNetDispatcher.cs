@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Glue.AppManager;
 using Microsoft.AspNetCore.Components;
@@ -35,5 +33,7 @@ namespace GlueBlazor.Data
         {
             dispatcher_.InvokeAsync(action);
         }
+
+        public int DispatcherThreadId => -1;
     }
 }
