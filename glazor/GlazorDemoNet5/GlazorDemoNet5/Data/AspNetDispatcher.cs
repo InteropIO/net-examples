@@ -1,17 +1,22 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Glue.AppManager;
 using Microsoft.AspNetCore.Components;
 
 namespace GlazorDemoNet5.Data
 {
-    internal class GlazorDispatcher : IGlueDispatcher
+    internal class AspNetDispatcher : IGlueDispatcher
     {
         private readonly Dispatcher dispatcher_;
 
-        public GlazorDispatcher(Dispatcher dispatcher)
+        public AspNetDispatcher(Dispatcher dispatcher)
         {
             dispatcher_ = dispatcher;
+            dispatcher.InvokeAsync(() =>
+            {
+                DispatcherThreadId = Thread.CurrentThread.ManagedThreadId;
+            });
         }
 
         public Task<T> InvokeAsync<T>(Func<T> callback)
@@ -33,5 +38,7 @@ namespace GlazorDemoNet5.Data
         {
             dispatcher_.InvokeAsync(action);
         }
+
+        public int DispatcherThreadId { get; private set; }
     }
 }

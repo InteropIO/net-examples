@@ -155,7 +155,7 @@ namespace GlazorDemoNet5.Data
 
         private IGlueDispatcher CreateGlueDispatcher(Dispatcher dispatcher)
         {
-            return new GlazorDispatcher(dispatcher);
+            return new AspNetDispatcher(dispatcher);
         }
 
         public async Task<T> GetJSProp<T>(string path)

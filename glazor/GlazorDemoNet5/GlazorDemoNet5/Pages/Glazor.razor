@@ -98,6 +98,8 @@
 
     private async Task RegisterMethod()
     {
+        AspNetDispatcher s = new AspNetDispatcher(Dispatcher.CreateDefault());
+
         await glue_.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
 
         interopMessage = string.Empty;
