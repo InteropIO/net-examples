@@ -21,6 +21,7 @@ namespace WindowsFormsChildAppsDemo
 
         public void Shutdown()
         {
+            Close();
         }
 
         public void Initialize(Form context, MyChildState state, Glue42 glue, GDStartingContext startingContext,
