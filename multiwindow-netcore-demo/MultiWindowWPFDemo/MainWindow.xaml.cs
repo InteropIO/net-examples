@@ -25,7 +25,6 @@ namespace MultiWindowWPFDemo
         public MainWindow()
         {
             InitializeComponent();
-
             Visibility = Visibility.Hidden;
 
             TabGroupId = Guid.NewGuid().ToString();
@@ -63,17 +62,20 @@ namespace MultiWindowWPFDemo
 
                         mainWindow_ = await glue42_.GlueWindows.RegisterStartupWindow(this, "MultiWindowDemoNETCore",
                                 builder => builder.WithChannelSupport(true)
-                                    .WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId)))
+                                    .WithPlacement(
+                                        new GlueWindowScreenPlacement().WithBounds(
+                                            new GlueWindowBounds(50, 50, 600, 600))))
                             .ConfigureAwait(false);
 
-                        glue42_.AppManager.RegisterWPFApp<ClientPortfolioView, ClientPortfolioView.State, MainWindow>(
-                            app =>
-                            {
-                                app.WithName(ChildWindowAppName)
-                                    .WithTitle(ChildWindowAppName)
-                                    .WithContext(this)
-                                    .WithType(GlueWindowType.Tab).WithFolder("MultiWindowNETCoreChildApps");
-                            });
+                        await glue42_.AppManager
+                            .RegisterWPFApp<ClientPortfolioView, ClientPortfolioView.State, MainWindow>(
+                                app =>
+                                {
+                                    app.WithName(ChildWindowAppName)
+                                        .WithTitle(ChildWindowAppName)
+                                        .WithContext(this)
+                                        .WithType(GlueWindowType.Tab).WithFolder("MultiWindowNETCoreChildApps");
+                                });
 
                         await glue42_.AppManager
                             .AwaitApplication(app => app.Name == ChildWindowAppName).ConfigureAwait(false);
@@ -90,7 +92,7 @@ namespace MultiWindowWPFDemo
 
             if (ColorSelector.SelectedItem != null)
             {
-                currColor = ((SolidColorBrush) ((Rectangle) ColorSelector.SelectedItem).Fill).Color.ToString();
+                currColor = ((SolidColorBrush)((Rectangle)ColorSelector.SelectedItem).Fill).Color.ToString();
             }
 
             var clientPortfolioView = new ClientPortfolioView(currColor);
@@ -101,7 +103,9 @@ namespace MultiWindowWPFDemo
                 builder =>
                 {
                     builder.WithTitle(ChildWindowAppName).WithType(GlueWindowType.Tab)
-                        .WithPlacement(new GlueWindowScreenPlacement().WithTabGroupId(TabGroupId));
+                        .WithPlacement(
+                            new GlueWindowScreenPlacement().WithBounds(
+                                new GlueWindowBounds(70, 70, 250, 150)));
                 }).ContinueWith(r =>
             {
                 glue42_.AppManager.RegisterInstance(ChildWindowAppName, r.Result.Id, clientPortfolioView,
