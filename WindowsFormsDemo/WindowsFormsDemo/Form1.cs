@@ -11,12 +11,11 @@ namespace WindowsFormsDemo
     {
         private Glue42 glue_;
         private IGlueWindow glueWindow_;
-
         public Form1()
         {
             InitializeComponent();
 
-            var initOptions = new InitializeOptions { ApplicationName = "MyWinFormsApp", AwaitAndTrackGlue = true };
+            var initOptions = new InitializeOptions { ApplicationName = "MyWinFormsApp", AwaitAndTrackGlue = false };
             //the lambda will be called when save layout is called
             initOptions.SetSaveRestoreStateEndpoint(v =>
             {
