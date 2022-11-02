@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using log4net;
 using Tick42;
 using Tick42.StartingContext;
 using Tick42.Windows;
@@ -40,6 +42,18 @@ namespace WindowsFormsDemo
                     // alternatively we can obtain the handle before initializing Glue
                     glueWindow_ = await glue_.GlueWindows.RegisterStartupWindow(Handle, "My WinForms App");
                 }, TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        private void btnTaskMgr_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                Process.Start("taskmgr.exe");
+            }
+            catch (Exception ex)
+            {
+                LogManager.GetLogger(typeof(Form1)).Error($"Failed launching taskmgr.exe", ex);
+            }
         }
     }
 }
