@@ -17,7 +17,10 @@ namespace WindowsFormsDemo
         {
             InitializeComponent();
 
-            var initOptions = new InitializeOptions { ApplicationName = "MyWinFormsApp", AwaitAndTrackGlue = false };
+            var initOptions = new InitializeOptions
+            {
+                ApplicationName = "MyWinFormsApp", AwaitAndTrackGlue = false,
+            };
             //the lambda will be called when save layout is called
             initOptions.SetSaveRestoreStateEndpoint(v =>
             {
@@ -40,7 +43,8 @@ namespace WindowsFormsDemo
 
                     // we can take the handle here because we have passed task scheduler
                     // alternatively we can obtain the handle before initializing Glue
-                    glueWindow_ = await glue_.GlueWindows.RegisterStartupWindow(Handle, "My WinForms App");
+                    glueWindow_ = await glue_.GlueWindows.RegisterStartupWindow(Handle, "My WinForms App", 
+                        gwo => gwo.WithCitrixId(() => "Form1"));
                 }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
