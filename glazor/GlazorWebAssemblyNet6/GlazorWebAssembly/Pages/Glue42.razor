@@ -1,0 +1,343 @@
+﻿@page "/glue"
+@using SuperSocket.ClientEngine
+@using Glue.Logging
+@using Glue.Transport
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@using Glue.Entities
+@using System.Reflection
+@using System.IO
+@using Glue.Channels
+@using Glue.AppManager
+@inject IGlueLoggerFactory GlueLoggerFactory
+@inject GlueProvider glueProvider
+@inject NavigationManager navigationManager_
+
+<h1>Glue demo</h1>
+
+<div class="row">
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="RegisterMethod">Register Method</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="StartApplication">Start portfolio</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
+    </div>
+    <div class="col-sm-2">
+        <select @bind="selectedInstrument">
+            <option value=""></option>
+            @foreach (var instrument in availableInstruments)
+            {
+                <option value="@instrument">@instrument</option>
+            }
+        </select>
+    </div>
+
+</div>
+
+<div class="row">
+    <div class="col">
+        @interopMessage
+    </div>
+</div>
+
+<table class="table" id="myTable">
+    <thead>
+    <tr>
+        @if (data_ is null)
+        {
+            <th>Loading...</th>
+        }
+        else
+        {
+            <th>Sync</th>
+            @foreach (var prop in data_.First().Properties)
+            {
+                <th id="@prop">@prop</th>
+            }
+        }
+    </tr>
+    </thead>
+    <tbody>
+    @if (data_ is null)
+    {
+        <p style="color: white;">
+            <em>Loading . . .</em>
+        </p>
+    }
+    else
+    {
+        @foreach (IPortfolioData pf in data_)
+        {
+            <tr>
+                <td>
+                    <button @onclick="() => Sync(pf)">o</button>
+                </td>
+                @foreach (var prop in pf.Properties)
+                {
+                    <td>@pf.GetPropertyValue(prop)</td>
+                }
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+
+@code {
+
+    Task Sync(IPortfolioData pf)
+    {
+        if (pf is PortfolioData pfd)
+        {
+            return SetRicInChannel(pfd.RIC);
+        }
+        return Task.CompletedTask;
+    }
+
+    class ClientData
+    {
+        public string Name { get; set; }
+        public T42Contact Contact { get; set; }
+        public double PortfolioValue { get; set; }
+        public IEnumerable<PortfolioData> Portfolio { get; internal set; }
+    }
+
+    interface IPortfolioData
+    {
+        string[] Properties { get; }
+
+        object GetPropertyValue(string property);
+    }
+
+    public class CSVPortfolioData : IPortfolioData
+    {
+        private readonly string[] values_;
+
+        public CSVPortfolioData(string[] values)
+        {
+            values_ = values;
+        }
+
+        public static string[] Header { get; set; }
+
+        public string[] Properties => Header;
+
+        public object GetPropertyValue(string property)
+        {
+            return values_[Header.IndexOf(property, 0, Header.Length)];
+        }
+    }
+
+    class PortfolioData : IPortfolioData
+    {
+        private static readonly Dictionary<string, PropertyInfo> propertyInfos =
+            typeof(PortfolioData).GetProperties(BindingFlags.Instance | BindingFlags.Public).ToDictionary(p => p.Name, p => p);
+
+        public string RIC { get; set; }
+        public int Shares { get; set; }
+        public double Price { get; set; }
+        public string Description { get; set; }
+
+        string[] IPortfolioData.Properties => propertyInfos.Keys.ToArray();
+
+        public object GetPropertyValue(string property)
+        {
+            return propertyInfos[property].GetValue(this);
+        }
+    }
+
+    string selectedInstrument = "";
+
+    readonly List<string> availableInstruments = new()
+    {
+        "VOD:LN",
+        "BARC:LN",
+        "BMW:GR",
+        "AAL:LN",
+        "GOOGL:US",
+        "MSFT:US",
+        "TEAM:US",
+        "CRM:US",
+        "JPM:US",
+        "FB:US"
+    };
+
+    private List<IPortfolioData> data_;
+
+    protected override async Task OnInitializedAsync()
+    {
+        data_ = await GetInstruments();
+    }
+
+        const bool UseSampleData = false;
+
+    async Task<List<IPortfolioData>> GetInstruments()
+    {
+        var logger = GlueLoggerFactory.GetLogger("Instruments");
+        int max_attempts = 3;
+        while (max_attempts-- > 0)
+        {
+            try
+            {
+                var gwSerializer = new GwProtocolSerializer(DebugLoggerFactory.Instance.GetLogger("Instruments"));
+                var c = new HttpClient();
+
+                if (UseSampleData)
+                {
+                    return await GetSampleData(c);
+                }
+
+                var responseStream = await c.GetStreamAsync("http://localhost:22060/clients");
+
+                using var sr = new StreamReader(responseStream);
+                string responseText = await sr.ReadToEndAsync();
+                JArray joResponse = JArray.Parse(responseText);
+                var clientDatas = joResponse.Select((dynamic jsonObject) =>
+                {
+                    var portfolioItems =
+                        JsonConvert.DeserializeObject<List<PortfolioData>>(
+                            (string) (jsonObject["context"]["portfolio"] + ""));
+                    if (portfolioItems == null)
+                    {
+                        return new ClientData();
+                    }
+
+                    double portfolioValue = portfolioItems.Select(pd => pd.Shares * pd.Price).Sum();
+                    string message = jsonObject + "";
+
+                    return new ClientData
+                    {
+                        Name = jsonObject["name"]["firstName"].Value + " " +
+                               jsonObject["name"]["lastName"].Value,
+                        Portfolio = portfolioItems,
+                        PortfolioValue = portfolioValue,
+                        Contact = gwSerializer.DeserializeMessage<T42Contact>(message)
+                    };
+                }).ToArray();
+
+                logger.Info($"Fetched {clientDatas.Length} client data");
+
+                return clientDatas.OrderByDescending(d => d.Portfolio.Count()).First().Portfolio.Cast<IPortfolioData>().ToList();
+            }
+            catch (Exception e)
+            {
+                logger.Error("Failed fetching instruments", e);
+                await Task.Delay(1000);
+            }
+        }
+        return new List<IPortfolioData>();
+    }
+
+    private async Task<List<IPortfolioData>> GetSampleData(HttpClient c)
+    {
+        var cs = await c.GetStreamAsync(navigationManager_.BaseUri + "/sample-data/cst_250.csv");
+        using var cssr = new StreamReader(cs);
+        bool header = true;
+        var data = new List<IPortfolioData>();
+        while (!cssr.EndOfStream)
+        {
+            var line = await cssr.ReadLineAsync();
+            if (line != null)
+            {
+                var csv = line.Split(',');
+                if (header)
+                {
+                    header = false;
+                    CSVPortfolioData.Header = csv;
+                }
+                else
+                {
+                    data.Add(new CSVPortfolioData(csv));
+                }
+            }
+        }
+
+        return data;
+    }
+
+}
+
+@code{
+    readonly string methodName = "glazor";
+
+    private async Task RegisterMethod()
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+
+        await glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
+
+        interopMessage = string.Empty;
+        interopMessage = $"Registered method: {methodName}";
+    }
+
+    string interopMessage = string.Empty;
+
+    private async Task InvokeMethod()
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+
+        var invocationResult = await glue.Interop.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+
+        var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
+
+        interopMessage = string.Empty;
+        interopMessage = $"Invoked method: {methodName} with status: {status}";
+    }
+
+}
+
+@code {
+
+    private async Task SetInstrument()
+    {
+        await SetRicInChannel(selectedInstrument);
+    }
+
+    private async Task SetRicInChannel(string ric)
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+        IGlueChannelContext context;
+        if (glueProvider.MainWindow is { } window)
+        {
+            context = window.ChannelContext;
+            if (context == null)
+            {
+                glueProvider.Logger.Warn($"To channel to set ric {ric} to MainWindow");
+                return;
+            }
+        }
+        else
+        {
+            var redChannel = await glue.Channels.AwaitChannel(channel => channel.Name == "Red").ConfigureAwait(false);
+            context = glue.Channels.JoinChannel(redChannel);
+        }
+
+        glueProvider.Logger.Info($"Setting ric to {ric} in context");
+        await context.SetValue(ric, "partyPortfolio.ric").ConfigureAwait(false);
+    }
+
+}
+
+@code {
+
+    private Task<IGlue42Base> GetGlue()
+        => glueProvider.InitGlue(navigationManager_.Uri);
+
+}
+
+@code {
+
+    private async Task StartApplication()
+    {
+        var glue = await GetGlue().ConfigureAwait(false);
+        var app = await glue.AppManager.AwaitApplication(a => a.Name == "channelsclientportfolio").ConfigureAwait(false);
+
+        var instance = await app.Start<StartupWindowConfig>(a => a.WithChannel("Red")).ConfigureAwait(false);
+    }
+
+}
