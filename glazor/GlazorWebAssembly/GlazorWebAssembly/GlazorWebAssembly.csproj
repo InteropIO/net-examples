@@ -5,10 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="log4net.cfg" />
-  </ItemGroup>
-
-  <ItemGroup>
     <EmbeddedResource Include="log4net.cfg" />
   </ItemGroup>
 

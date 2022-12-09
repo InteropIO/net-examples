@@ -27,8 +27,8 @@ namespace GlazorWebAssembly
         {
             jsRuntime_ = jsRuntime;
 
-            glueLoggerFactory_ ??= loggerFactory;
-            Logger ??= glueLoggerFactory_.GetLogger(typeof(GlueProvider));
+            glueLoggerFactory_ = loggerFactory;
+            Logger = glueLoggerFactory_.GetLogger(typeof(GlueProvider));
 
             Logger.Info($"Initialized {nameof(GlueProvider)}");
         }
