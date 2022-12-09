@@ -20,7 +20,7 @@ namespace GlazorWebAssembly
         private readonly IGlueLoggerFactory glueLoggerFactory_;
 
         private readonly IJSRuntime jsRuntime_;
-        private readonly IGlueLog logger_;
+        public IGlueLog Logger { get; }
         private TaskCompletionSource<IGlue42Base> glueTcs_;
 
         public GlueProvider(IJSRuntime jsRuntime, IGlueLoggerFactory loggerFactory, IServiceProvider serviceProvider)
@@ -28,9 +28,9 @@ namespace GlazorWebAssembly
             jsRuntime_ = jsRuntime;
 
             glueLoggerFactory_ ??= loggerFactory;
-            logger_ ??= glueLoggerFactory_.GetLogger(typeof(GlueProvider));
+            Logger ??= glueLoggerFactory_.GetLogger(typeof(GlueProvider));
 
-            logger_.Info($"Initialized {nameof(GlueProvider)}");
+            Logger.Info($"Initialized {nameof(GlueProvider)}");
         }
 
         public IGlue42Base Glue42 { get; private set; }
@@ -39,12 +39,12 @@ namespace GlazorWebAssembly
 
         public async Task<IGlueWindow> GetMainWindow()
         {
-            await InitGlue().ConfigureAwait(false);
+            await InitGlue(null).ConfigureAwait(false);
 
             return MainWindow;
         }
 
-        public async Task<IGlue42Base> InitGlue()
+        public async Task<IGlue42Base> InitGlue(string uri)
         {
             if (Interlocked.CompareExchange(ref glueTcs_,
                     new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is
@@ -54,7 +54,7 @@ namespace GlazorWebAssembly
                 return await tcs.Task.ConfigureAwait(false);
             }
 
-            logger_.Info("Initializing Glue");
+            Logger.Info("Initializing Glue");
 
             InitializeOptions initOptions;
 
@@ -71,11 +71,11 @@ namespace GlazorWebAssembly
                         windowId = gdHostInfo.WindowId;
                         return gdHostInfo;
                     }).ConfigureAwait(false);
-                logger_.Info("Initializing Glue hosted in GD");
+                Logger.Info("Initializing Glue hosted in GD");
             }
             catch (Exception e)
             {
-                logger_.Info("Initializing Glue with username and app name");
+                Logger.Info("Initializing Glue with username and app name");
 
                 // Something went wrong probably the application is started in the browser
                 var username = await GetPromptInput("user name").ConfigureAwait(false);
@@ -99,7 +99,11 @@ namespace GlazorWebAssembly
 
             //initialize the logging factory
             initOptions.LoggerFactory = glueLoggerFactory_;
-            initOptions.AppDefinition = new AppDefinition { ApplicationType = ApplicationType.Window };
+            initOptions.AppDefinition = new AppDefinition
+            {
+                ApplicationType = ApplicationType.Window,
+                Url = uri ?? "https://missing-url"
+            };
 
             var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
 
@@ -112,11 +116,11 @@ namespace GlazorWebAssembly
                     (context, channel, updatedArgs) =>
                     {
                         //this is invoked when the channel data is updated
-                        logger_.Info($"Channel was updated: {updatedArgs}");
+                        Logger.Info($"Channel was updated: {updatedArgs}");
                     }), (context, newChannel) =>
                 {
                     //this is invoke when the channel is changed
-                    logger_.Info($"Channel is {newChannel.Name}");
+                    Logger.Info($"Channel is {newChannel.Name}");
                 }));
             }
 

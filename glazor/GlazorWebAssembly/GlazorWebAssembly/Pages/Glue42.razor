@@ -307,6 +307,7 @@
             context = window.ChannelContext;
             if (context == null)
             {
+                glueProvider.Logger.Warn($"To channel to set ric {ric} to MainWindow");
                 return;
             }
         }
@@ -316,6 +317,7 @@
             context = glue.Channels.JoinChannel(redChannel);
         }
 
+        glueProvider.Logger.Info($"Setting ric to {ric} in context");
         await context.SetValue(ric, "partyPortfolio.ric").ConfigureAwait(false);
     }
 
@@ -324,7 +326,7 @@
 @code {
 
     private Task<IGlue42Base> GetGlue()
-        => glueProvider.InitGlue();
+        => glueProvider.InitGlue(navigationManager_.Uri);
 
 }
 
