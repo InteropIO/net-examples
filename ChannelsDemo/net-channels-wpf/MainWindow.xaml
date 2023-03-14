@@ -1,0 +1,56 @@
+﻿<Window x:Class="net_channels_wpf.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:net_channels_wpf"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="450" Width="800">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="77"/>
+            <RowDefinition Height="220*"/>
+            <RowDefinition Height="22"/>
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0">
+            <Button x:Name="BtnRegisterWindow" Content="Register Window" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="115" Click="BtnRegisterWindow_Click" Height="20"/>
+            <Button x:Name="BtnUpdateSimple" Content="Update Simple" HorizontalAlignment="Left" Margin="10,47,0,0" VerticalAlignment="Top" Width="115" Click="BtnUpdateSimple_Click" />
+            <Button x:Name="BtnGetContact" Content="Get Contact" HorizontalAlignment="Left" Margin="130,47,0,0" VerticalAlignment="Top" Width="115" RenderTransformOrigin="-0.41,0.5" IsDefault="True" Click="BtnGetContact_Click" />
+            <Button x:Name="BtnUpdateContact" Content="Update Contact" HorizontalAlignment="Left" Margin="250,47,0,0" VerticalAlignment="Top" Width="115" Click="BtnUpdateContact_Click" />
+        </Grid>
+        <Grid Grid.Row="1" Background="#FFFFFFFF">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <TextBlock Height="22" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="1,4,0,0" Text="Window:" />
+                <ComboBox x:Name="ComboWCSelector" Height="22" Width="120" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="52,1,0,0" SelectionChanged="ComboWCSelector_SelectionChanged">
+                    <ComboBoxItem Content="N/A" IsSelected="True" />
+
+                </ComboBox>
+                <Border BorderThickness="1" BorderBrush="Black" Margin="0,25,10,0">
+                    <ScrollViewer >
+                        <TextBlock x:Name="TxtWindowChannel" TextWrapping="Wrap"/>
+                </ScrollViewer>
+                </Border>
+            </Grid>
+            <Grid Grid.Column="1">
+                <TextBlock Height="22" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="1,4,0,0" Text="Independent:" />
+                <ComboBox x:Name="ComboICSelector" Height="22" Width="120" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="77,1,0,0" SelectionChanged="ComboICSelector_SelectionChanged">
+                    <ComboBoxItem Content="N/A" IsSelected="True" />
+                </ComboBox>
+                <Border BorderThickness="1" BorderBrush="Black" Margin="0,25,10,0">
+                    <ScrollViewer>
+                            <TextBlock x:Name="TxtIndependentChannel" TextWrapping="Wrap"/>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Grid>
+        <StatusBar Grid.Row="2" VerticalAlignment="Bottom" Background="#FFFFFFFF" >
+            <StatusBarItem>
+                <TextBlock x:Name="TxtGlueStatus" Text="Glue" Background="#FFFFFFFF"/>
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
