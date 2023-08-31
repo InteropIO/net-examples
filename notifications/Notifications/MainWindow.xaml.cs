@@ -28,11 +28,13 @@ namespace WPFApp
         public void AcceptNotification(string customerId)
         {
             //accept handler with notification object state
+            MessageBox.Show(customerId, "Accepted");
         }
 
         public void RejectNotification(string customerId)
         {
             //reject handler with notification object state
+            MessageBox.Show(customerId, "Rejected");
         }
 
         public void Dispose()
@@ -78,8 +80,8 @@ namespace WPFApp
 
             var actions = new List<GlueRoutingMethod>
             {
-                new GlueRoutingMethod("AcceptNotification", Description: "Accept", Parameters: parameters),
-                new GlueRoutingMethod("RejectNotification", Description: "Reject")
+                new GlueRoutingMethod("AcceptNotification", DisplayName: "Accept", Parameters: parameters),
+                new GlueRoutingMethod("RejectNotification", DisplayName: "Reject")
             };
 
             var notification = new DesktopNotification(Title.Text,
