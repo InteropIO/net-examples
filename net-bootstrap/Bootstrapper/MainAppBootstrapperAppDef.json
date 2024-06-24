@@ -1,0 +1,50 @@
+[
+    {
+        "title": "MainAppBootstrapper",
+        "type": "exe",
+		// matches the definition in the code in BootstrappedMainApp - the LauncherApp setting
+        "name": "MainAppBootstrapper",
+        "icon": "http://localhost:22080/resources/icons/wpf.ico",
+        "ignoreSaveOnClose": true,
+        "ignoreFromLayouts": true,
+        "allowMultiple": false,
+		"hidden": true,
+        "details": {
+            "path": "C:/work/tick42/github/net-examples/net-bootstrap/Bootstrapper/bin/Debug",
+            "command": "MainAppBootstrapper.exe",
+            "parameters": "",
+            "startingContextMode": "none",
+			"trackingType": "Process",
+			"terminateOnShutdown": false,
+        },
+        "customProperties": {
+            "includeInCanvas": false,
+            "includeInWorkspaces": false,
+            "appManagerOrder": 2
+        }
+    },
+	
+	{
+		"disabled": false,
+        "title": "BootstrappedMainApp",
+        "type": "exe",
+        "name": "BootstrappedMainApp",
+		"launcherApp": "MainAppBootstrapper",
+        "icon": "http://localhost:22080/resources/icons/wpf.ico",
+        "ignoreSaveOnClose": true,
+        "ignoreFromLayouts": true,
+        "allowMultiple": false,
+		"hidden": false,
+        "details": {
+            "path": "",
+            "startingContextMode": "none",
+			"trackingType": "AGM",
+			"terminateOnShutdown": false,
+        },
+        "customProperties": {
+            "includeInCanvas": false,
+            "includeInWorkspaces": false,
+            "appManagerOrder": 2
+        }
+    }
+]

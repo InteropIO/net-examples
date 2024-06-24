@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31911.196
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MainAppBootstrapper", "Bootstrapper\MainAppBootstrapper.csproj", "{88819D46-477A-4D0D-B023-9311FA4D0F65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BootstrappedMainApp", "BootstrappedMainApp\BootstrappedMainApp.csproj", "{BC40415A-93E9-4BC3-8DB5-74D21AAAFFCF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{88819D46-477A-4D0D-B023-9311FA4D0F65}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88819D46-477A-4D0D-B023-9311FA4D0F65}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88819D46-477A-4D0D-B023-9311FA4D0F65}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88819D46-477A-4D0D-B023-9311FA4D0F65}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BC40415A-93E9-4BC3-8DB5-74D21AAAFFCF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC40415A-93E9-4BC3-8DB5-74D21AAAFFCF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC40415A-93E9-4BC3-8DB5-74D21AAAFFCF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC40415A-93E9-4BC3-8DB5-74D21AAAFFCF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {359F8B65-2090-4A32-8141-9569BBBA9563}
+	EndGlobalSection
+EndGlobal
