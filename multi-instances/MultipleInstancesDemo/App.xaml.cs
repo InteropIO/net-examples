@@ -41,19 +41,18 @@ namespace MultipleInstancesDemo
 
             mutex_ = new Mutex(true, MutexName, out bool isOwned);
 
+            var rco = GDStartingContextProvider.ExtractRemoteConfigurationOptionsFromCmdLine() ??
+                      GDStartingContextProvider.ExtractRemoteConfigurationOptionsFromEnvironment();
+
             if (isOwned)
             {
                 // First instance
                 StartPipeServer();
-                ProcessArguments(e.Args, null);
+                ProcessArguments(e.Args, rco);
             }
             else
             {
                 // Second instance
-
-                var rco = GDStartingContextProvider.ExtractRemoteConfigurationOptionsFromCmdLine() ??
-                          GDStartingContextProvider.ExtractRemoteConfigurationOptionsFromEnvironment();
-
                 SendArgumentsToFirstInstance(e.Args, rco);
                 // Terminate the second instance
                 Shutdown();
