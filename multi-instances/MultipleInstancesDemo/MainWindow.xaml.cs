@@ -89,7 +89,8 @@ namespace MultipleInstancesDemo
 
             var initializing = Glue42.InitializeGlue(initializeOptions);
             glue_ = await initializing;
-            wnd_ = await initializing.RegisterWindow(this, initializeOptions.ApplicationName);
+            wnd_ = await glue_.GlueWindows.RegisterStartupWindow(this, initializeOptions.ApplicationName,
+                w => w.WithChannelSupport(true));
             glue_.Interop.RegisterService<ISomethingService>(this,
                 modifyServiceConfig: c => c.Dispatcher = new WrappedDispatcher(Dispatcher));
             caller_ = glue_.Interop.CreateServiceProxy<ISomethingService>();
