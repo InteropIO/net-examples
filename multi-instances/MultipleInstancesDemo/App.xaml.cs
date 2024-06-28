@@ -146,7 +146,8 @@ namespace MultipleInstancesDemo
             var runnerType = typeof(Isolator);
             var runner = (Isolator)newDomain.CreateInstanceAndUnwrap(runnerType.Assembly.FullName, runnerType.FullName);
 
-            // Run the window in the new AppDomain
+            // Run the window in the new AppDomain inside the dispatcher of the main AppDomain
+            // otherwise the app will have to spin a STA thread for the window
             Dispatcher.BeginInvoke((Action)(() =>
             {
                 Interlocked.Increment(ref alive_);
