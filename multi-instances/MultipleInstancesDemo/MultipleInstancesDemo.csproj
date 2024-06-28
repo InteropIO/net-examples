@@ -34,8 +34,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ioConnectNET, Version=1.10.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\io.Connect.NET.1.10.0.0\lib\net45\ioConnectNET.dll</HintPath>
+    <Reference Include="ioConnectNET, Version=1.12.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
+      <HintPath>packages\io.Connect.NET.1.12.0.0\lib\net45\ioConnectNET.dll</HintPath>
     </Reference>
     <Reference Include="log4net, Version=2.0.17.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a, processorArchitecture=MSIL">
       <HintPath>packages\log4net.2.0.17\lib\net45\log4net.dll</HintPath>
@@ -94,6 +94,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <None Include="log4net.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

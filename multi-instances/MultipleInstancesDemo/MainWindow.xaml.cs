@@ -65,7 +65,7 @@ namespace MultipleInstancesDemo
             }
         }
 
-        public async void ProcessArguments(string[] args, RemoteConfigurationOptions rco)
+        public async void ProcessArguments(string[] args, RemoteConfigurationOptions rco, int instance)
         {
             var initializeOptions = new InitializeOptions
             {
@@ -89,10 +89,20 @@ namespace MultipleInstancesDemo
 
             var initializing = Glue42.InitializeGlue(initializeOptions);
             glue_ = await initializing;
-            wnd_ = await glue_.GlueWindows.RegisterStartupWindow(this, initializeOptions.ApplicationName,
-                w => w.WithChannelSupport(true));
-            glue_.Interop.RegisterService<ISomethingService>(this,
-                modifyServiceConfig: c => c.Dispatcher = new WrappedDispatcher(Dispatcher));
+            bool somethingService = instance % 2 != 0;
+            string title = initializeOptions.ApplicationName + " " + instance + (somethingService
+                ? " SOMETHING"
+                : " NO SERVICE");
+
+            wnd_ = await glue_.GlueWindows.RegisterStartupWindow(this, title,
+                w => w.WithChannelSupport(true).WithTitle(title));
+
+            if (somethingService)
+            {
+                glue_.Interop.RegisterService<ISomethingService>(this,
+                    modifyServiceConfig: c => c.Dispatcher = new WrappedDispatcher(Dispatcher));
+            }
+
             caller_ = glue_.Interop.CreateServiceProxy<ISomethingService>();
 
             T GetRestoreState<T>(T _) => glue_.GetRestoreState<T>();
@@ -115,6 +125,11 @@ namespace MultipleInstancesDemo
 
         private void DoSomething_Click(object sender, RoutedEventArgs e)
         {
+            // to invoke it from JS you can just go:
+            // glue.interop.invoke('io.multiple.GetSomethingElse', {something: {thing: 'frog', price: 3.14, happenedOn: new Date()}}, "all");
+
+            // this will invoke the service method on the first instance
+            // and will add the result to the list
             caller_.GetSomethingElse(new Something
                 {
                     Thing = "Something",
