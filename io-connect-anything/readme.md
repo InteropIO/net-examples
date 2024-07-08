@@ -1,6 +1,6 @@
 # io-connect-anything
 
-This repo contains a simple .net framework console application demonstrates glueifying of 3rd party applications - in this case Notepad and Paint.
+This repo contains a simple .net framework console application and demonstrates glueifying of 3rd party applications - in this case Notepad and Paint.
 
 ### Notes:
 
