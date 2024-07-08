@@ -4,6 +4,7 @@ This repo contains a simple .net framework console application demonstrates glue
 
 ### Notes:
 
+- The applications are registered dynamically - when you first launch the project - this is the idea behind the child app factories. You can register any 3rd party app and/or any internal view as an 'App'
 - The applications are launched with a channel support and controlled by the host app, they can be saved, restored.
 - The interprocess communication to the apps is done via window messages and windows clipboard.
 - LambdaApp is a simple lambda implementation of the IGlueApp nomenclature to ease the implementation
