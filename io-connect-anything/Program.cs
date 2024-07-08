@@ -15,6 +15,11 @@ using Image = System.Drawing.Image;
 
 namespace io_connect_anything
 {
+    /// <summary>
+    ///     Demonstrates glueifying of 3rd party applications - in this case Notepad and Paint.
+    ///     The applications are launched with a channel support and controlled by the host app, they can be saved, restored.
+    ///     The interprocess communication to the apps is done via window messages and windows clipboard.
+    /// </summary>
     internal class Program
     {
         [DllImport("user32.dll", SetLastError = true)]
@@ -32,6 +37,14 @@ namespace io_connect_anything
             Dispatcher.Run();
         }
 
+        /// <summary>
+        ///     Renders text to image
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="font"></param>
+        /// <param name="textColor"></param>
+        /// <param name="backColor"></param>
+        /// <returns></returns>
         public static Image DrawText(string text, Font font, Color textColor, Color backColor)
         {
             if (text == null)
@@ -61,7 +74,12 @@ namespace io_connect_anything
             }
         }
 
-        public static void DrawTextAndPaste(string text, IntPtr intPtr)
+        /// <summary>
+        ///     Simple routine to draw text on image and paste it to a window given by its handle
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="windowHandle"></param>
+        public static void DrawTextAndPaste(string text, IntPtr windowHandle)
         {
             var img = DrawText(text, new Font("Arial", 16), Color.Black, Color.White);
             if (img == null)
@@ -70,7 +88,7 @@ namespace io_connect_anything
             }
 
             Clipboard.SetImage(img);
-            Win32.SetForegroundWindow(intPtr);
+            Win32.SetForegroundWindow(windowHandle);
             Thread.Sleep(100);
             SendKeys.SendWait("^v");
         }
@@ -85,7 +103,10 @@ namespace io_connect_anything
                     // we're just launcher for other apps, so we don't need to be saved and restored
                     // otherwise we will be closed upon restoration
                     // if this is desired - put this to false
-                    IgnoreFromLayouts = true
+                    IgnoreFromLayouts = true,
+                    // the factory app can be marked as singleton, to make sure there's only one instance
+                    // this is up to the developer
+                    AllowMultiple = false
                 }
             });
             Console.WriteLine(":::glue ready");
@@ -112,7 +133,7 @@ namespace io_connect_anything
                         ChannelChanged = (channelContext, channel, arg3) =>
                         {
                             // or read from channelContext.GetValue<string>("partyPortfolio.ric");
-                            Win32.SendMessage(editHandle, Win32.WM_SETTEXT, IntPtr.Zero, channel.Name);
+                            Win32.SendMessage(editHandle, Win32.WM_SETTEXT, IntPtr.Zero, channel?.Name);
                         },
                         ChannelUpdate = (channelContext, channel, arg3) =>
                         {
@@ -161,7 +182,7 @@ namespace io_connect_anything
                         GetState = () => Guid.NewGuid().ToString("N").AsCompletedTask()
                     };
                 });
-            
+
             Console.WriteLine(":::io-connect-anything ready");
         }
     }
