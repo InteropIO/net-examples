@@ -1,11 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
-using GnsDesktopManager.Model;
+using DOT.Core.Extensions;
 using Tick42;
+using Tick42.Notifications;
 using Tick42.Windows;
+using Notification = Tick42.Notifications.Notification;
 
 namespace WPFApp
 {
@@ -25,16 +25,23 @@ namespace WPFApp
             UpdateUI(false);
         }
 
-        public void AcceptNotification(string customerId)
+        public void AcceptNotification(string customerId, double customerPrice)
         {
             //accept handler with notification object state
-            MessageBox.Show(customerId, "Accepted");
+            MessageBox.Show(customerId + " price " + customerPrice, "Accepted");
         }
 
-        public void RejectNotification(string customerId)
+        public void RejectNotification(string customerId, double customerPrice)
         {
             //reject handler with notification object state
-            MessageBox.Show(customerId, "Rejected");
+            MessageBox.Show(customerId + " price " + customerPrice, "Rejected");
+        }
+
+        public void NotificationRoutingDetail(IServiceOptions options = null)
+        {
+            var ic = options.InvocationContext.InvocationContext;
+            // receiving notification object state and other service details in ic.Arguments
+            Console.WriteLine(ic.Arguments.AsString());
         }
 
         public void Dispose()
@@ -49,10 +56,10 @@ namespace WPFApp
             //bounds are optional. With them we will just set initial placement of the application
             var defaultBounds = new GlueWindowBounds
             {
-                X = (int) ((SystemParameters.PrimaryScreenWidth / 2) - (Width / 2)),
-                Y = (int) ((SystemParameters.PrimaryScreenHeight / 2) - (Height / 2)),
-                Width = (int) Width,
-                Height = (int) Height
+                X = (int)((SystemParameters.PrimaryScreenWidth / 2) - (Width / 2)),
+                Y = (int)((SystemParameters.PrimaryScreenHeight / 2) - (Height / 2)),
+                Width = (int)Width,
+                Height = (int)Height
             };
             var gwOptions = glue.GetStartupWindowOptions("Notification Publisher", defaultBounds);
             gwOptions.WithType(GlueWindowType.Tab);
@@ -64,7 +71,7 @@ namespace WPFApp
             glue.Interop.RegisterService<INotificationHandler>(this);
         }
 
-        private void OnSendNotificationClick(object sender, RoutedEventArgs e)
+        private async void OnSendNotificationClick(object sender, RoutedEventArgs e)
         {
             if (glue_ == null)
             {
@@ -72,35 +79,42 @@ namespace WPFApp
                 return;
             }
 
-            //object state
-            var parameters = new List<GlueMethodParameter>
+            await glue_.Notifications.RaiseNotification(new Notification
             {
-                new GlueMethodParameter("customerId", new GnsValue("11"))
-            };
-
-            var actions = new List<GlueRoutingMethod>
-            {
-                new GlueRoutingMethod("AcceptNotification", DisplayName: "Accept", Parameters: parameters),
-                new GlueRoutingMethod("RejectNotification", DisplayName: "Reject")
-            };
-
-            var notification = new DesktopNotification(Title.Text,
-                (NotificationSeverity) Enum.Parse(typeof(NotificationSeverity), Severity.Text),
-                "type",
-                Description.Text,
-                "category",
-                "source",
-                "AcceptedHandler",
-                actions
-            );
-
-            glue_.Notifications.Publish(notification)
-                .ContinueWith(r =>
+                Title = Title.Text,
+                Severity = Enum.TryParse<Severity>(Severity.Text, true, out var severity)
+                    ? severity
+                    : Tick42.Notifications.Severity.Low,
+                Type = NotificationType.Notification,
+                Category = "category",
+                Source = "source",
+                Description = Description.Text,
+                GlueRoutingDetailCallback = new NotificationCallback
                 {
-                    if (r.Status != TaskStatus.RanToCompletion)
+                    Name = nameof(INotificationHandler.NotificationRoutingDetail),
+                    SetTarget = c => c.WithTargetMatching(s => s.InstanceId, glue_.Identity.InstanceId),
+                    Parameters = new object[] { new { customerId = "41234", notification = "$(this)" } },
+                },
+                Actions = new[]
+                {
+                    new NotificationActionSettings
                     {
+                        Name = nameof(INotificationHandler.AcceptNotification),
+                        DisplayName = "Accept",
+                        Description = "Accept",
+                        Parameters = new object[] { new { customerId = "41234", customerPrice = 3.14 } },
+                        SetTarget = c => c.WithTargetMatching(s => s.InstanceId, glue_.Identity.InstanceId)
+                    },
+                    new NotificationActionSettings
+                    {
+                        Name = nameof(INotificationHandler.RejectNotification),
+                        DisplayName = "Reject",
+                        Description = "Reject",
+                        Parameters = new object[] { new { customerId = "41234", customerPrice = 3.14 } },
+                        SetTarget = c => c.WithTargetMatching(s => s.InstanceId, glue_.Identity.InstanceId)
                     }
-                });
+                },
+            });
         }
 
         private void UpdateUI(bool isConnected)
@@ -133,7 +147,7 @@ namespace WPFApp
 
         public Brush ConnectionStatusColor
         {
-            get => (Brush) GetValue(ConnectionStatusColorProperty);
+            get => (Brush)GetValue(ConnectionStatusColorProperty);
             set => SetValue(ConnectionStatusColorProperty, value);
         }
 
