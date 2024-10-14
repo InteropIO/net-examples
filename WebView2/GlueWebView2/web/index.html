@@ -1,0 +1,23 @@
+<script src="https://cdn.jsdelivr.net/npm/@interopio/desktop@next"></script>
+<h1>Glue WebView2 Demo</h1>
+<script>
+	async function init() {
+		console.log(`starting...`);
+		window.glueContext = window.chrome.webview.hostObjects.glue;
+		window.io = await IODesktop({
+			application: "WebView2 WAPP",
+			appManager: "full",
+			auth: {
+				username: await window.glueContext.GetUserName(),
+				password: ""
+			},
+			gateway: {
+                protocolVersion: 3,
+                ws: await window.glueContext.GetGwUri()
+            },
+			channels: true
+		});
+		console.log(`IOP APIs initialized`);
+	}
+	init();
+</script>
