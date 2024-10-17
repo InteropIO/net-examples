@@ -152,7 +152,8 @@ namespace GlueWebView2
             webView21.CoreWebView2InitializationCompleted += (sender, args) =>
             {
                 wv2Context_ = new WebView2GlueContext(webView21.CoreWebView2, gwp, window_?.Id,
-                    gdsc.Env, gdsc.Region, gdsc.GwURL, gdsc.Username, gwToken);
+                    gdsc.Env, gdsc.Region, gdsc.GwURL,
+                    gdsc.Username ?? gdsc.GDInstanceConfig?.Auth?.UserName ?? Environment.UserName, gwToken);
                 webView21.CoreWebView2.AddHostObjectToScript("glue", wv2Context_);
                 textBox1.ReadOnly = false;
             };
