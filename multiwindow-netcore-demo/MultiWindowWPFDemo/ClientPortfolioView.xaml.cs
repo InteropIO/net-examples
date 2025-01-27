@@ -86,8 +86,8 @@ namespace MultiWindowWPFDemo
         {
             Close();
         }
-
-        public void HandleUpdate(IGlueChannelContext channelContext, IGlueChannel channel, T42Contact data)
+        
+        public void HandleUpdate(IGlueChannelContext channelContext, ChannelUpdateInfo updateInfo, T42Contact data)
         {
         }
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -45,10 +46,17 @@ namespace MultiWindowWPFDemo
                 }, Dispatcher.AsGlueDispatcher());
 
 
-            Glue42.InitializeGlue(new InitializeOptions
+            Glue42.InitializeGlueAndTrack(new InitializeOptions
                 {
                     ApplicationName = "MultiWindowDemoNETCore",
-                    LoggerFactory = DebugLoggerFactory.Instance
+                    LoggerFactory = DebugLoggerFactory.Instance,
+                    AdvancedOptions = new AdvancedOptions
+                    {
+                        GDInstanceSelector = contexts =>
+                        {
+                            return contexts.FirstOrDefault().AsCompletedTask();
+                        },
+                    }
                 })
                 .ContinueWith(async r =>
                 {
