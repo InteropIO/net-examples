@@ -6,10 +6,11 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using Glue;
+using Glue.GDStarting;
 using Glue.Helpers;
-using Glue.Logging;
 using Glue.Transport;
 using Glue.Windows;
+using log4net.Config;
 
 namespace MultiWindowWPFDemo
 {
@@ -45,15 +46,18 @@ namespace MultiWindowWPFDemo
                     ColorSelector.SelectedIndex = restoreState.SelectedIndex;
                 }, Dispatcher.AsGlueDispatcher());
 
+            XmlConfigurator.Configure();
 
             Glue42.InitializeGlueAndTrack(new InitializeOptions
                 {
                     ApplicationName = "MultiWindowDemoNETCore",
-                    LoggerFactory = DebugLoggerFactory.Instance,
+                    LoggerFactory = new Log4NetLoggerFactory(),
                     AdvancedOptions = new AdvancedOptions
                     {
+                        InstanceValidator = config => config.TryPidAndPort(),
                         GDInstanceSelector = contexts =>
                         {
+                            // choose some instance to connect to
                             return contexts.FirstOrDefault().AsCompletedTask();
                         },
                     }
