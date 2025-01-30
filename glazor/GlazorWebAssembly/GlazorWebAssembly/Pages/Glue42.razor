@@ -129,7 +129,8 @@
 
         public object GetPropertyValue(string property)
         {
-            return values_[Header.IndexOf(property, 0, Header.Length)];
+            int indexOf = Header.IndexOf(property, 0, Header.Length);
+            return values_[indexOf];
         }
     }
 
