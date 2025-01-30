@@ -40,12 +40,12 @@ namespace GlueBlazor.Data
 
         public async Task<IGlueWindow> GetMainWindow()
         {
-            await InitGlue().ConfigureAwait(false);
+            await InitGlue(null).ConfigureAwait(false);
 
             return MainWindow;
         }
 
-        public async Task<IGlue42Base> InitGlue()
+        public async Task<IGlue42Base> InitGlue(string uri)
         {
             if (Interlocked.CompareExchange(ref glueTcs_,
                     new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is
@@ -85,6 +85,11 @@ namespace GlueBlazor.Data
 
                 initOptions = new InitializeOptions
                 {
+                    AppDefinition = new AppDefinition
+                    {
+                        ApplicationType = ApplicationType.Window,
+                        Url = uri ?? "https://missing-url"
+                    },
                     AdvancedOptions = new AdvancedOptions
                     {
                         AuthenticationProvider = new GatewaySecretAuthenticationProvider(username, username)
@@ -140,17 +145,17 @@ namespace GlueBlazor.Data
             return input;
         }
 
-        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
+        private async Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
         {
             // create dispatcher for the hosted window
             IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
 
             // get a dummy window factory that is for hosted windows
-            var glueWindowFactory = glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher));
+            var glueWindowFactory = await glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher)).ConfigureAwait(false);
 
             //obtain the main window
-            return glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
-                builder => builder.WithId(windowId).WithChannelSupport(true));
+            return await glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
+                builder => builder.WithId(windowId).WithChannelSupport(true)).ConfigureAwait(false);
         }
 
         private IGlueDispatcher CreateGlueDispatcher(Dispatcher dispatcher)

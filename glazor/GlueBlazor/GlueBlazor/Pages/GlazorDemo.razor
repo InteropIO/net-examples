@@ -8,6 +8,7 @@
 @using Glue.Channels
 @inject GlueProvider glueProvider
 @inject IJSRuntime js
+@inject NavigationManager navigationManager_
 
 <h1>Glazor demo</h1>
 
@@ -238,7 +239,7 @@
 @code {
 
     private Task<IGlue42Base> GetGlue()
-        => glueProvider.InitGlue();
+        => glueProvider.InitGlue(navigationManager_.Uri);
 
 }
 
