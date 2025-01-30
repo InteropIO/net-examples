@@ -1,4 +1,4 @@
-﻿using Glue.AppManager;
+﻿using Glue;
 using Microsoft.AspNetCore.Components;
 
 namespace GlazorWebAssembly6
@@ -17,9 +17,9 @@ namespace GlazorWebAssembly6
             return dispatcher_.InvokeAsync(callback);
         }
 
-        public void BeginInvoke(Action action)
+        public void Dispatch(Func<Task> taskAction)
         {
-            dispatcher_.InvokeAsync(action);
+            dispatcher_.InvokeAsync(taskAction);
         }
 
         public T Invoke<T>(Func<T> action)
@@ -27,11 +27,22 @@ namespace GlazorWebAssembly6
             return dispatcher_.InvokeAsync(action).Result;
         }
 
-        public void Invoke(Action action)
+        public void EnsureStarted()
+        {
+        }
+
+        public void Dispatch(Action action)
         {
             dispatcher_.InvokeAsync(action);
         }
 
         public int DispatcherThreadId => -1;
+
+        public string Name => dispatcher_.ToString();
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
+        }
     }
 }

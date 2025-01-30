@@ -1,7 +1,4 @@
-﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Glue;
+﻿using Glue;
 using Glue.AppManager;
 using Glue.AuthenticationProviders;
 using Glue.Channels;
@@ -143,17 +140,17 @@ namespace GlazorWebAssembly6
             return input;
         }
 
-        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
+        private async Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
         {
             // create dispatcher for the hosted window
             IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
 
             // get a dummy window factory that is for hosted windows
-            var glueWindowFactory = glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher));
+            var glueWindowFactory = await glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher)).ConfigureAwait(false);
 
             //obtain the main window
-            return glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
-                builder => builder.WithId(windowId).WithChannelSupport(true));
+            return await glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
+                builder => builder.WithId(windowId).WithChannelSupport(true)).ConfigureAwait(false);
         }
 
         private IGlueDispatcher CreateGlueDispatcher(Dispatcher dispatcher)
