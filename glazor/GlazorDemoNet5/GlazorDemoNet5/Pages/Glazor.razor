@@ -1,6 +1,7 @@
 ﻿@page "/glazordemo"
 @inject GlueProvider glueProvider_
 @inject IJSRuntime js
+@inject NavigationManager navman
 
 <h1>Glazor demo</h1>
 
@@ -87,7 +88,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        glue_ = await glueProvider_.InitGlue().ConfigureAwait(false);
+        glue_ = await glueProvider_.InitGlue(navman).ConfigureAwait(false);
         await glue_.Channels.AwaitChannel("Red").ConfigureAwait(false);
     }
 

@@ -5,6 +5,7 @@ using Glue.GDStarting;
 using Glue.Transport;
 using Microsoft.JSInterop;
 using System;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Glue.AppManager;
@@ -40,12 +41,12 @@ namespace GlazorDemoNet5.Data
 
         public async Task<IGlueWindow> GetMainWindow()
         {
-            await InitGlue().ConfigureAwait(false);
+            await InitGlue(null).ConfigureAwait(false);
 
             return MainWindow;
         }
 
-        public async Task<IGlue42Base> InitGlue()
+        public async Task<IGlue42Base> InitGlue(NavigationManager navman)
         {
             if (Interlocked.CompareExchange(ref glueTcs_,
                     new TaskCompletionSource<IGlue42Base>(TaskCreationOptions.RunContinuationsAsynchronously), null) is
@@ -76,7 +77,7 @@ namespace GlazorDemoNet5.Data
             }
             catch (Exception e)
             {
-                logger_.Info("Initializing Glue with username and app name");
+                logger_.Info("Initializing Glue with username and app name", e);
 
                 // Something went wrong probably the application is started in the browser
                 var username = await GetPromptInput("user name").ConfigureAwait(false);
@@ -100,7 +101,11 @@ namespace GlazorDemoNet5.Data
 
             //initialize the logging factory
             initOptions.LoggerFactory = DebugLoggerFactory.Instance;
-            initOptions.AppDefinition = new AppDefinition { ApplicationType = ApplicationType.Window };
+            initOptions.AppDefinition = new AppDefinition
+            {
+                ApplicationType = ApplicationType.Window,
+                Url = navman?.Uri ?? "https://glazor-url-not-setup-correctly"
+            };
 
             var glue = await Glue42Base.InitializeGlue(initOptions).ConfigureAwait(false);
 
@@ -140,17 +145,17 @@ namespace GlazorDemoNet5.Data
             return input;
         }
 
-        private Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
+        private async Task<IGlueWindow> RegisterMainWindow(IGlue42Base glue, string windowId)
         {
             // create dispatcher for the hosted window
             IGlueDispatcher dispatcher = CreateGlueDispatcher(Dispatcher.CreateDefault());
 
             // get a dummy window factory that is for hosted windows
-            var glueWindowFactory = glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher));
+            var glueWindowFactory = await glue.GetWindowFactory(new HostedWindowFactoryBridge<object>(dispatcher)).ConfigureAwait(false);
 
             //obtain the main window
-            return glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
-                builder => builder.WithId(windowId).WithChannelSupport(true));
+            return await glueWindowFactory.RegisterStartupWindow(this, "Glazor Web Assembly",
+                builder => builder.WithId(windowId).WithChannelSupport(true)).ConfigureAwait(false);
         }
 
         private IGlueDispatcher CreateGlueDispatcher(Dispatcher dispatcher)

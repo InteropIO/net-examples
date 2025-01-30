@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Threading;
 using System.Threading.Tasks;
-using Glue.AppManager;
+using Glue;
 using Microsoft.AspNetCore.Components;
 
 namespace GlazorDemoNet5.Data
@@ -13,10 +12,6 @@ namespace GlazorDemoNet5.Data
         public AspNetDispatcher(Dispatcher dispatcher)
         {
             dispatcher_ = dispatcher;
-            dispatcher.InvokeAsync(() =>
-            {
-                DispatcherThreadId = Thread.CurrentThread.ManagedThreadId;
-            });
         }
 
         public Task<T> InvokeAsync<T>(Func<T> callback)
@@ -24,9 +19,9 @@ namespace GlazorDemoNet5.Data
             return dispatcher_.InvokeAsync(callback);
         }
 
-        public void BeginInvoke(Action action)
+        public void Dispatch(Func<Task> taskAction)
         {
-            dispatcher_.InvokeAsync(action);
+            dispatcher_.InvokeAsync(taskAction);
         }
 
         public T Invoke<T>(Func<T> action)
@@ -34,11 +29,22 @@ namespace GlazorDemoNet5.Data
             return dispatcher_.InvokeAsync(action).Result;
         }
 
-        public void Invoke(Action action)
+        public void EnsureStarted()
+        {
+        }
+
+        public void Dispatch(Action action)
         {
             dispatcher_.InvokeAsync(action);
         }
 
-        public int DispatcherThreadId { get; private set; }
+        public int DispatcherThreadId => -1;
+
+        public string Name => dispatcher_.ToString();
+
+        public void Dispose()
+        {
+            // TODO release managed resources here
+        }
     }
 }
