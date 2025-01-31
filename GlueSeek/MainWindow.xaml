@@ -1,0 +1,100 @@
+﻿<Window x:Class="GlueSeek.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GlueSeek"
+        mc:Ignorable="d"
+        Title="Glue Seek" Height="450" Width="800" Background="#222">
+    <Window.Resources>
+        <local:GDInstanceConverter x:Key="GDInstanceConverter"/>
+        <Style TargetType="DataGrid">
+            <Setter Property="Background" Value="#222"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="GridLinesVisibility" Value="None"/>
+            <Setter Property="BorderBrush" Value="Gray"/>
+        </Style>
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="Black"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        
+    </Window.Resources>
+
+    <Grid>
+        <DataGrid Name="GlueGrid" ItemsSource="{Binding}" AutoGenerateColumns="True"
+                  SelectionUnit="FullRow"
+                  CanUserAddRows="False" CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  CanUserResizeRows="False"
+                  CanUserResizeColumns="True"
+                  BorderThickness="1" BorderBrush="Gray"
+                  FontFamily="Consolas" ColumnWidth="*" MaxColumnWidth="250"
+                  SelectionMode="Single">
+            <DataGrid.Resources>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="{x:Null}"/>
+                    <Setter Property="Foreground" Value="LightGray"/>
+                </Style>
+                <Style TargetType="DataGridCell">
+                    <Setter Property="Background" Value="{x:Null}"/>
+                    <Setter Property="Foreground" Value="LightGray"/>
+                </Style>
+            </DataGrid.Resources>
+            <DataGrid.ItemContainerStyle>
+                <Style TargetType="DataGridRow">
+                    <Setter Property="Background" Value="#333"/>
+                </Style>
+            </DataGrid.ItemContainerStyle>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="PID">
+                    <DataGridTextColumn.Binding>
+                        <Binding Converter="{StaticResource GDInstanceConverter}">
+                            <Binding.ConverterParameter>
+                                <local:ConverterValue>Pid</local:ConverterValue>
+                            </Binding.ConverterParameter>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground">
+                                <Setter.Value>
+                                    <Binding Converter="{StaticResource GDInstanceConverter}">
+                                        <Binding.ConverterParameter>
+                                            <local:ConverterValue>PidColor</local:ConverterValue>
+                                        </Binding.ConverterParameter>
+                                    </Binding>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+                <DataGridTextColumn Header="Port">
+                    <DataGridTextColumn.Binding>
+                        <Binding Converter="{StaticResource GDInstanceConverter}">
+                            <Binding.ConverterParameter>
+                                <local:ConverterValue>Port</local:ConverterValue>
+                            </Binding.ConverterParameter>
+                        </Binding>
+                    </DataGridTextColumn.Binding>
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Text" Value="Not checked"/>
+                            <EventSetter Event="MouseLeftButtonDown" Handler="PortColumn_Click"/>
+                            <Setter Property="Foreground">
+                                <Setter.Value>
+                                    <Binding Converter="{StaticResource GDInstanceConverter}">
+                                        <Binding.ConverterParameter>
+                                            <local:ConverterValue>PortColor</local:ConverterValue>
+                                        </Binding.ConverterParameter>
+                                    </Binding>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+    </Grid>
+</Window>
