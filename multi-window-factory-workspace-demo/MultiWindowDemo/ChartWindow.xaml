@@ -1,0 +1,18 @@
+﻿<Window x:Class="MultiWindowFactoryDemo.ChartWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:multiWindowFactoryDemo="clr-namespace:MultiWindowFactoryDemo"
+        mc:Ignorable="d"
+        Title="ChartWindow" Height="350" Width="500">
+    <DockPanel Background="#1A2B30">
+        <StackPanel Orientation="Horizontal" DockPanel.Dock="Top">
+            <Button Click="Switch_Click" Padding="1" Margin="5">Switch</Button>
+            <TextBlock Foreground="#929A9C" Margin="5">Symbol Name</TextBlock>
+            <TextBlock Foreground="#929A9C" Margin="5" Name="Symbol"></TextBlock>
+        </StackPanel>
+
+        <multiWindowFactoryDemo:ChartControl x:Name="ChartControl" Visibility="Visible"></multiWindowFactoryDemo:ChartControl>
+    </DockPanel>
+</Window>
