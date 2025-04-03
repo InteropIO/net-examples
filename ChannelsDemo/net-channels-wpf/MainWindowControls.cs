@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 using System.Text.Json;
 using System.Windows;
 using Tick42.Channels;
@@ -129,14 +130,21 @@ namespace net_channels_wpf
             text += (reason ?? "") + "\n";
             if(channel is object && channelContext is object)
             {
-                var colorText = channelContext.GetValue<string>("color", ChannelLevel.Meta);
-                var color = System.Drawing.ColorTranslator.FromHtml(colorText);
-                text += $"displayColor: #{color.ToArgb():X8}\n";
-                text += "channelData:\n";
-                var dataValue = channelContext.GetValue(null, ChannelLevel.Data);
-                var jsOptions = new JsonSerializerOptions { WriteIndented = true };
-                var jsonString = JsonSerializer.Serialize(dataValue, jsOptions);
-                text += jsonString;
+                try
+                {
+                    var colorText = channelContext.GetValue<string>("color", ChannelLevel.Meta);
+                    var color = ColorTranslator.FromHtml(colorText);
+                    text += $"displayColor: #{color.ToArgb():X8}\n";
+                    text += "channelData:\n";
+                    var dataValue = channelContext.GetValue(null, ChannelLevel.Data);
+                    var jsOptions = new JsonSerializerOptions { WriteIndented = true };
+                    var jsonString = JsonSerializer.Serialize(dataValue, jsOptions);
+                    text += jsonString;
+                }
+                catch (Exception e)
+                {
+                    text += $"Cannot read from channel: {e.Message}\n";
+                }
             }
             else
             {
@@ -154,8 +162,7 @@ namespace net_channels_wpf
             }
             if(!(glueWindow.ChannelContext.GetCurrentChannel() is object))
             {
-                MessageBox.Show("No channel selected");
-                return null;
+                MessageBox.Show("No channel selected but returning channel context.");
             }
             return glueWindow.ChannelContext;
         }
@@ -170,7 +177,11 @@ namespace net_channels_wpf
         {
             var context = checkGetWindowChannelContext();
             if (context is null) return;
-            context.SetValue(DateTime.Now, "aSimple.lastUpdate");
+            context.SetValue(new
+            {
+                g = Guid.NewGuid().ToString("N"),
+                lastUpdated = DateTime.Now
+            }, "aSimple");
         }
 
         private void BtnGetContact_Click(object sender, RoutedEventArgs e)
@@ -239,7 +250,7 @@ namespace net_channels_wpf
                 }
                 else
                 {
-                    icContext.SwitchChannel(null);
+                    icContext.SwitchChannel((string)null);
                 }
             }
         }

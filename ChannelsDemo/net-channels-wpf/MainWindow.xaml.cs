@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows;
+using DOT.AGM;
 using Tick42;
 using Tick42.Channels;
 using Tick42.Contexts;
@@ -88,6 +89,10 @@ namespace net_channels_wpf
 
                 // subscribe for window channel events
                 glueWindow.ChannelContext.Subscribe(this);
+                glueWindow.ChannelContext.Subscribe(new LambdaGlueChannelEventHandler<Value>((context, info, arg3) =>
+                {
+                    System.Diagnostics.Trace.WriteLine(arg3);
+                }));
 
                 UpdateControlsWindowRegistered();
             }
