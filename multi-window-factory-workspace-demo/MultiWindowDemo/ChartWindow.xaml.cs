@@ -3,12 +3,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using DOT.Core.Native;
 using Tick42;
 using Tick42.AppManager;
 using Tick42.Channels;
 using Tick42.Contexts;
 using Tick42.StartingContext;
 using Tick42.Windows;
+using Tick42.Windows.InteropContract;
 using Tick42.Workspaces;
 using static MultiWindowFactoryDemo.App;
 
@@ -76,6 +79,51 @@ public partial class ChartWindow : Window, IGlueApp<ChartWindow.SymbolState, App
                 HandleWorkspaceEvent(we);
             }
         });
+
+        await glueWindow.Update(update => update.AddButton(button =>
+        {
+            button.ButtonId = "btn" + Guid.NewGuid().ToString("N");
+            // button.Image = Image.FromFile("btnimage.png") or button.ImageBase64 = "base64string...";
+
+            void GlueButtonOnClickAction(WindowButtonClickedEvent @event, ButtonInfo buttonInfo)
+            {
+                void ShowPopupMenu()
+                {
+                    var pos = Win32.GetCursorPos();
+
+                    // choose the position for the menu
+                    var cxt = new ContextMenu
+                        { PlacementRectangle = new Rect(new Point(pos.x, pos.y), new Size(50, 100)), };
+
+                    void ItemClick(object sender, RoutedEventArgs args)
+                    {
+                        if (sender is MenuItem item)
+                        {
+                            MessageBox.Show(item.Tag?.ToString());
+                        }
+                    }
+
+                    MenuItem CreateMenu(string header, object tag)
+                    {
+                        var mi = new MenuItem { Header = header, Tag = tag };
+                        mi.Click += ItemClick;
+                        return mi;
+                    }
+
+                    // build the menu
+                    cxt.Items.Add(CreateMenu("One", 1));
+                    cxt.Items.Add(CreateMenu("Two", 2));
+                    cxt.Items.Add(CreateMenu("Three", 3));
+                    // show it
+                    cxt.IsOpen = true;
+                }
+
+                Dispatcher.InvokeAsync(ShowPopupMenu);
+            }
+
+            button.OnClickAction = GlueButtonOnClickAction;
+        }));
+
         // Invoked when the window is restored
         Dispatcher.Invoke(() => { Symbol.Text = state?.ActiveSymbol ?? RandomSymbol(); });
     }
