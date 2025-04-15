@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
@@ -12,6 +13,7 @@ using DOT.Logging;
 using log4net;
 using log4net.Config;
 using Tick42;
+using Tick42.AppManager;
 using Tick42.StartingContext;
 using static MultiWindowFactoryDemo.ChartWindow;
 
@@ -73,6 +75,7 @@ public partial class App : Application
             await glue.AppManager.RegisterWPFAppAsync<ChartWindow, SymbolState, AppFactoryContext>(app =>
             {
                 app.WithName($"ChildApp_{appType}")
+                    .WithFolder("Children")
                     .WithTitle(appType.ToString())
                     .WithContext(new AppFactoryContext { AppType = appType, MainApp = this })
                     .WithDispatcher(Dispatcher.CurrentDispatcher)
@@ -89,6 +92,94 @@ public partial class App : Application
                     });
             });
         }
+
+        // register WPF window with a custom factory
+        await glue.AppManager.RegisterWPFAppAsync<object, ChartWindow, SymbolState, AppFactoryContext>(app =>
+        {
+            app.WithName("MainApp")
+                .WithFolder("Children")
+                .WithTitle("ChartZero")
+                .WithAppKey(
+                    new object()) // optional appKey, can be anything and is received in the factory - for correlation/cookie purpose
+                .WithContext(new AppFactoryContext { AppType = AppType.ChartOne, MainApp = this })
+                .WithDispatcher(Dispatcher.CurrentDispatcher)
+                .WithAppDefinitionModifier(appDef =>
+                {
+                    appDef.AllowWorkspaceDrop = true;
+                    if (appDef.CustomProperties == null)
+                    {
+                        appDef.CustomProperties = new Dictionary<string, Value>();
+                    }
+
+                    appDef.CustomProperties["includeInWorkspaces"] = true;
+                    return appDef;
+                });
+        }, async (context, builder, appKey) =>
+        {
+            // do something async, if required
+            // control over the creation of the window
+            var wnd = new ChartWindow();
+            // init something else in the wnd, if needed
+
+            // return the ready window
+            return wnd;
+        });
+
+
+        // fully custom app factory
+        // use lambda app factory to create a window with complete freedom
+        // in here you're not limited to the WPF app factory
+        // you can use any window - if you have its handle
+        // e.g. you can launch a new process and use its window handle
+        await glue.AppManager.RegisterAppFactoryAsync<object, LambdaApp<string>, string, object>(
+            app =>
+                app.WithFolder("Children")
+                    .WithAllowMultiple(true)
+                    .WithName("GenericWindow")
+                    .WithContext(new AppFactoryContext { AppType = AppType.ChartOne, MainApp = this })
+                    .WithDispatcher(Dispatcher.CurrentDispatcher)
+                    .WithAppDefinitionModifier(appDef =>
+                    {
+                        appDef.AllowWorkspaceDrop = true;
+                        if (appDef.CustomProperties == null)
+                        {
+                            appDef.CustomProperties = new Dictionary<string, Value>();
+                        }
+
+                        appDef.CustomProperties["includeInWorkspaces"] = true;
+                        return appDef;
+                    }),
+            async (context, builder, __) =>
+            {
+                var anyWindow = new Window
+                {
+                    Content = new TextBlock
+                    {
+                        Text = "Specific content",
+                        FontSize = 20,
+                        Foreground = Brushes.Red,
+                        Background = Brushes.Yellow
+                    }
+                };
+
+                // position it outside the screen so it's not 'seen' initially
+                anyWindow.Top = -10000;
+                anyWindow.Left = -10000;
+                // initially show the window to force WPF initialization
+                anyWindow.Show();
+
+                // get the handle
+                var handle = new WindowInteropHelper(anyWindow).EnsureHandle();
+
+                // pass it to the lambda app
+                // you can create your own LambdaApp implementation that suits you better
+                return new LambdaApp<string>(handle)
+                {
+                    ChannelChanged = (channelContext, channel, prevChannel) => { },
+                    ChannelUpdate = (channelContext, channel, updateArgs) => { },
+                    // ... Init, GetState, Shutdown
+                };
+            }).ConfigureAwait(false);
     }
 
     public class AppFactoryContext
