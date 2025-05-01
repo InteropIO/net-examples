@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -155,7 +156,7 @@ public partial class App : Application
                 {
                     Content = new TextBlock
                     {
-                        Text = "Specific content",
+                        Text = "Specific content on thread " + Thread.CurrentThread.ManagedThreadId,
                         FontSize = 20,
                         Foreground = Brushes.Red,
                         Background = Brushes.Yellow
@@ -179,7 +180,72 @@ public partial class App : Application
                     ChannelUpdate = (channelContext, channel, updateArgs) => { },
                     // ... Init, GetState, Shutdown
                 };
-            }).ConfigureAwait(false);
+            });
+
+        // same freedom, but also start each window in its own thread
+        await glue.AppManager.RegisterAppFactoryAsync<object, LambdaApp<string>, string, object>(
+            app =>
+                app.WithFolder("Children")
+                    .WithAllowMultiple(true)
+                    .WithName("GenericWindow_SeparateThread")
+                    .WithContext(new AppFactoryContext { AppType = AppType.ChartOne, MainApp = this })
+                    .WithAppDefinitionModifier(appDef =>
+                    {
+                        appDef.AllowWorkspaceDrop = true;
+                        if (appDef.CustomProperties == null)
+                        {
+                            appDef.CustomProperties = new Dictionary<string, Value>();
+                        }
+
+                        appDef.CustomProperties["includeInWorkspaces"] = true;
+                        return appDef;
+                    }),
+            (context, builder, __) =>
+            {
+                var tcs = new TaskCompletionSource<LambdaApp<string>>();
+                var dispThread = new Thread(() =>
+                {
+                    var anyWindow = new Window
+                    {
+                        Content = new TextBlock
+                        {
+                            Text = "Specific content on thread " + Thread.CurrentThread.ManagedThreadId,
+                            FontSize = 20,
+                            Foreground = Brushes.Red,
+                            Background = Brushes.Yellow
+                        }
+                    };
+
+                    // position it outside the screen so it's not 'seen' initially
+                    anyWindow.Top = -10000;
+                    anyWindow.Left = -10000;
+                    // initially show the window to force WPF initialization
+                    anyWindow.Show();
+
+                    anyWindow.Closed += (sender, args) => Dispatcher.ExitAllFrames();
+
+                    // get the handle
+                    var handle = new WindowInteropHelper(anyWindow).EnsureHandle();
+
+                    // pass it to the lambda app
+                    // you can create your own LambdaApp implementation that suits you better
+                    var la = new LambdaApp<string>(handle)
+                    {
+                        ChannelChanged = (channelContext, channel, prevChannel) => { },
+                        ChannelUpdate = (channelContext, channel, updateArgs) => { },
+                        // ... Init, GetState, Shutdown
+                    };
+
+                    tcs.TrySetResult(la);
+
+                    Dispatcher.Run();
+                });
+                dispThread.SetApartmentState(ApartmentState.STA);
+                dispThread.Name = "LambdaAppThread";
+                dispThread.Start();
+                return tcs.Task;
+
+            });
     }
 
     public class AppFactoryContext
