@@ -8,6 +8,7 @@
 @using System.IO
 @using Glue.Channels
 @using Glue.AppManager
+@using Glue.Notifications
 @inject IGlueLoggerFactory GlueLoggerFactory
 @inject GlueProvider glueProvider
 @inject NavigationManager navigationManager_
@@ -26,6 +27,9 @@
     </div>
     <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="RaiseNotification">Raise Notification</button>
     </div>
     <div class="col-sm-2">
         <select @bind="selectedInstrument">
@@ -173,7 +177,7 @@
         data_ = await GetInstruments();
     }
 
-        const bool UseSampleData = false;
+    const bool UseSampleData = false;
 
     async Task<List<IPortfolioData>> GetInstruments()
     {
@@ -259,7 +263,27 @@
         return data;
     }
 
-}
+    private async void RaiseNotification()
+    {
+        try
+        {
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid().ToString(),
+                Severity = Severity.Critical,
+                Title = "Glazor has been logged as healthy",
+                Source = "Glazor",
+                Category = "test",
+                Description = "Everything is ok"
+            };
+            await glueProvider.Glue42.Notifications.RaiseNotification(notification);
+            Console.WriteLine("Notification raised successfully");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
+    }}
 
 @code{
     readonly string methodName = "glazor";
