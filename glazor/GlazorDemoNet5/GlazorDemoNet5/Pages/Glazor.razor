@@ -1,4 +1,5 @@
 ﻿@page "/glazordemo"
+@using Glue.Notifications
 @inject GlueProvider glueProvider_
 @inject IJSRuntime js
 @inject NavigationManager navman
@@ -11,6 +12,9 @@
     </div>
     <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="InvokeMethod">Invoke Method</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="RaiseNotification">Raise Notification</button>
     </div>
 
     <div class="col-sm-2">
@@ -84,24 +88,35 @@
 }
 
 @code{
-    IGlue42Base glue_;
+
+
+
+    Task<IGlue42Base> glue_;
+
 
     protected override async Task OnInitializedAsync()
     {
-        glue_ = await glueProvider_.InitGlue(navman).ConfigureAwait(false);
-        await glue_.Channels.AwaitChannel("Red").ConfigureAwait(false);
+        glue_ = glueProvider_.InitGlue(navman);
+        await WithGlue(glue => glue.Channels.AwaitChannel("Red").ConfigureAwait(false));
     }
 
+    async Task<T> WithGlue<T>(Func<IGlue42Base, T> task)
+    {
+        return await WithGlue(glue => Task.FromResult(task(glue))).ConfigureAwait(false);
+    }
+
+    async Task<T> WithGlue<T>(Func<IGlue42Base, Task<T>> task)
+    {
+        return await task(await glue_.ConfigureAwait(false)).ConfigureAwait(false);
+    }
 }
 
-@code{
+@code {
     readonly string methodName = "glazor";
 
     private async Task RegisterMethod()
     {
-        AspNetDispatcher s = new AspNetDispatcher(Dispatcher.CreateDefault());
-
-        await glue_.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); }).ConfigureAwait(false);
+        await WithGlue(glue => glue.Interop.RegisterEndpoint(builder => builder.SetName(methodName), async context => { await context.ResultBuilder.Succeed().ConfigureAwait(false); })).ConfigureAwait(false);
 
         interopMessage = string.Empty;
         interopMessage = $"Registered method: {methodName}";
@@ -111,7 +126,7 @@
 
     private async Task InvokeMethod()
     {
-        var invocationResult = await glue_.Interop.Invoke(methodName, new Dictionary<string, object>()).ConfigureAwait(false);
+        var invocationResult = await WithGlue(glue => glue.Interop.Invoke(methodName, new Dictionary<string, object>())).ConfigureAwait(false);
 
         var status = invocationResult.IsFailed ? "Failed" : "Succeeded";
 
@@ -131,14 +146,40 @@
         }
 
 
-    // await the channel by name
-        var channel = await glue_.Channels.AwaitChannel(selectedChannel).ConfigureAwait(false);
+        // await the channel by name
+        var channel = await WithGlue(glue => glue.Channels.AwaitChannel(selectedChannel)).ConfigureAwait(false);
 
-    // get its writable context by joining it
-        var context = glue_.Channels.JoinChannel(channel);
+        // get its writable context by joining it
+        var context = await WithGlue(glue => glue.Channels.JoinChannel(channel)).ConfigureAwait(false);
 
-    //Assuming that there is an application open and set to the selected channel it will change the instrument
+        //Assuming that there is an application open and set to the selected channel it will change the instrument
         await context.SetValue(selectedInstrument, "partyPortfolio.ric").ConfigureAwait(false);
+    }
+}
+
+@code {
+
+    private async void RaiseNotification()
+    {
+        try
+        {
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid().ToString(),
+                Severity = Severity.High,
+                Title = "Glazor has been logged as healthy",
+                Source = "Glazor",
+                Category = "test",
+                Description = "Everything is ok"
+            };
+
+            await WithGlue(glue => glue.Notifications.RaiseNotification(notification)).ConfigureAwait(false);
+            Console.WriteLine("Notification raised successfully");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
     }
 
 }
