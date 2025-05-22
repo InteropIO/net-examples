@@ -6,6 +6,7 @@
 @using Newtonsoft.Json.Linq
 @using System.IO
 @using Glue.Channels
+@using Glue.Notifications
 @inject GlueProvider glueProvider
 @inject IJSRuntime js
 @inject NavigationManager navigationManager_
@@ -24,6 +25,9 @@
     </div>
     <div class="col-sm-2">
         <button class="btn btn-primary btn-sm" @onclick="SetInstrument">Set Instrument</button>
+    </div>
+    <div class="col-sm-2">
+        <button class="btn btn-primary btn-sm" @onclick="RaiseNotification">Raise Notification</button>
     </div>
     <div class="col-sm-2">
         <select @bind="selectedInstrument">
@@ -169,6 +173,29 @@
             }
         }
         return new List<PortfolioData>();
+    }
+
+    private async void RaiseNotification()
+    {
+        try
+        {
+            var notification = new Notification
+            {
+                Id = Guid.NewGuid().ToString(),
+                Severity = Severity.High,
+                Title = "Glazor has been logged as healthy",
+                Source = "Glazor",
+                Category = "test",
+                Description = "Everything is ok"
+            };
+            var glue = await GetGlue().ConfigureAwait(false);
+            await glue.Notifications.RaiseNotification(notification).ConfigureAwait(false);
+            Console.WriteLine("Notification raised successfully");
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine(e.Message);
+        }
     }
 
 }
