@@ -12,11 +12,11 @@ namespace net_channels_wpf
 {
     public partial class MainWindow : Window, IGlueChannelEventHandler
     {
-        private Glue42 glue;
-        private IGlueWindow glueWindow = null;
-        private IGlueChannelContext icContext  = null;
-        private List<IGlueChannel> availableChannels = new List<IGlueChannel>();
-        private bool glueIsConnecting = false;
+        private Glue42 glue_;
+        private IGlueWindow glueWindow_;
+        private IGlueChannelContext icContext_;
+        private readonly List<IGlueChannel> availableChannels_ = new List<IGlueChannel>();
+        private bool glueIsConnecting_;
 
         public MainWindow()
         {
@@ -27,24 +27,24 @@ namespace net_channels_wpf
 
         private async Task InitializeGlue()
         {
-            if (glue is object || glueIsConnecting) return;
+            if (glue_ is object || glueIsConnecting_) return;
             var initOpt = new Tick42.StartingContext.InitializeOptions()
             {
                 ApplicationName = "net-channels-wpf",
             };
             try
             {
-                glueIsConnecting = true;
+                glueIsConnecting_ = true;
 
                 // initialize Glue
-                glue = await Glue42.InitializeGlue(initOpt);
+                glue_ = await Glue42.InitializeGlue(initOpt);
 
                 // get independent channel context and subscribe for events on the channel
-                icContext = glue.Channels.JoinChannel(null);
-                icContext.Subscribe(new LambdaGlueChannelEventHandler(HandleIndependentChannelUpdate, HandleIndependentChannelChanged));
+                icContext_ = glue_.Channels.JoinChannel(null);
+                icContext_.Subscribe(new LambdaGlueChannelEventHandler(HandleIndependentChannelUpdate, HandleIndependentChannelChanged));
 
                 // subscribe for channel discovery
-                glue.Channels.Subscribe(onChannеlDiscovered);
+                glue_.Channels.Subscribe(OnChannelDiscovered);
 
                 UpdateControlsGlueConnected();
             }
@@ -55,18 +55,18 @@ namespace net_channels_wpf
             }
             finally
             {
-                glueIsConnecting = false;
+                glueIsConnecting_ = false;
             }
         }
 
         private async Task RegisterGlueWindow()
         {
-            if (glueWindow is object)
+            if (glueWindow_ is object)
             {
                 MessageBox.Show("Glue window is already registered", "Info");
                 return;
             }
-            if (glue is null)
+            if (glue_ is null)
             {
                 MessageBox.Show("Glue not yet initialized", "Info");
                 return;
@@ -74,7 +74,7 @@ namespace net_channels_wpf
 
             try
             {
-                var gwOptions = glue.GlueWindows.GetStartupOptions() ?? new GlueWindowOptions();
+                var gwOptions = glue_.GlueWindows.GetStartupOptions() ?? new GlueWindowOptions();
                 gwOptions.WithChannelSupport(true);
                 if(string.IsNullOrWhiteSpace(gwOptions.Title))
                 {
@@ -85,11 +85,11 @@ namespace net_channels_wpf
                 {
                     gwOptions.WithChannel(preSelectedChannel);
                 }
-                glueWindow = await glue.GlueWindows?.RegisterWindow(this, gwOptions);
+                glueWindow_ = await glue_.GlueWindows.RegisterWindow(this, gwOptions);
 
                 // subscribe for window channel events
-                glueWindow.ChannelContext.Subscribe(this);
-                glueWindow.ChannelContext.Subscribe(new LambdaGlueChannelEventHandler<Value>((context, info, arg3) =>
+                glueWindow_.ChannelContext.Subscribe(this);
+                glueWindow_.ChannelContext.Subscribe(new LambdaGlueChannelEventHandler<Value>((context, info, arg3) =>
                 {
                     System.Diagnostics.Trace.WriteLine(arg3);
                 }));
@@ -108,9 +108,9 @@ namespace net_channels_wpf
 
         #region Channel Events
         // Discovery callback
-        private void onChannеlDiscovered(IGlueChannel channel)
+        private void OnChannelDiscovered(IGlueChannel channel)
         {
-            availableChannels.Add(channel);
+            availableChannels_.Add(channel);
             UpdateAvailableChannels();
         }
 

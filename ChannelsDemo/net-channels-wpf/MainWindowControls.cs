@@ -35,7 +35,7 @@ namespace net_channels_wpf
         private void UpdateControlsWindowRegistered()
         {
             EnableRegisterWindowButton(false, "Window Registered");
-            var wcContext = glueWindow.ChannelContext;
+            var wcContext = glueWindow_.ChannelContext;
             SetWindowChannelText(GetChannelInfoText(wcContext, wcContext.GetCurrentChannel(), "Window Registered"));
 
             Dispatcher.BeginInvoke((Action)(() =>
@@ -66,7 +66,7 @@ namespace net_channels_wpf
                 ComboWCSelector.Items.Add("None");
                 ComboICSelector.Items.Clear();
                 ComboICSelector.Items.Add("None");
-                foreach (var channel in availableChannels)
+                foreach (var channel in availableChannels_)
                 {
                     ComboWCSelector.Items.Add(channel.Name);
                     ComboICSelector.Items.Add(channel.Name);
@@ -80,7 +80,7 @@ namespace net_channels_wpf
         {
             if (string.IsNullOrEmpty(channelName))
             {
-                channelName = glueWindow?.ChannelContext?.GetCurrentChannel()?.Name ?? "None";
+                channelName = glueWindow_?.ChannelContext?.GetCurrentChannel()?.Name ?? "None";
             }
             Dispatcher.BeginInvoke((Action)(() =>
             {
@@ -92,7 +92,7 @@ namespace net_channels_wpf
         {
             if(string.IsNullOrEmpty(channelName))
             {
-                channelName = icContext?.GetCurrentChannel()?.Name ?? "None";
+                channelName = icContext_?.GetCurrentChannel()?.Name ?? "None";
             }
             Dispatcher.BeginInvoke((Action)(() =>
             {
@@ -155,16 +155,16 @@ namespace net_channels_wpf
 
         private IGlueChannelContext checkGetWindowChannelContext()
         {
-            if (!(glueWindow is object))
+            if (!(glueWindow_ is object))
             {
                 MessageBox.Show("Glue window not registered");
                 return null;
             }
-            if(!(glueWindow.ChannelContext.GetCurrentChannel() is object))
+            if(!(glueWindow_.ChannelContext.GetCurrentChannel() is object))
             {
                 MessageBox.Show("No channel selected but returning channel context.");
             }
-            return glueWindow.ChannelContext;
+            return glueWindow_.ChannelContext;
         }
 
         #region Control Events
@@ -230,27 +230,27 @@ namespace net_channels_wpf
         private void ComboWCSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             var selectedText = ComboWCSelector.SelectedItem as string;
-            var newChannel = availableChannels.Find(c => c.Name.Equals(selectedText));
-            if(glueWindow is object)
+            var newChannel = availableChannels_.Find(c => c.Name.Equals(selectedText));
+            if(glueWindow_ is object)
             {
-                glueWindow.Channel = newChannel?.Name;
+                glueWindow_.Channel = newChannel?.Name;
             }
         }
 
         private void ComboICSelector_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             var selectedText = ComboICSelector.SelectedItem as string;
-            var newChannel = availableChannels.Find(c => c.Name.Equals(selectedText));
+            var newChannel = availableChannels_.Find(c => c.Name.Equals(selectedText));
 
-            if (icContext is object)
+            if (icContext_ is object)
             {
                 if (newChannel is object)
                 {
-                    icContext.SwitchChannel(newChannel);
+                    icContext_.SwitchChannel(newChannel);
                 }
                 else
                 {
-                    icContext.SwitchChannel((string)null);
+                    icContext_.SwitchChannel((string)null);
                 }
             }
         }

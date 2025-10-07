@@ -36,8 +36,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ioConnectNET, Version=1.29.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>..\packages\io.Connect.NET.1.29.0.0\lib\net45\ioConnectNET.dll</HintPath>
+    <Reference Include="ioConnectNET, Version=1.38.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
+      <HintPath>..\packages\io.Connect.NET.1.38.0.0\lib\net45\ioConnectNET.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
