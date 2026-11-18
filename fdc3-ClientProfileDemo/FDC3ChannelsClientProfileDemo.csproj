@@ -67,11 +67,13 @@
   </PropertyGroup>
   <PropertyGroup />
   <ItemGroup>
-    <Reference Include="fdc3.ioConnectNET, Version=1.12.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\fdc3.io.Connect.NET.1.12.0.0\lib\net45\fdc3.ioConnectNET.dll</HintPath>
+    <Reference Include="fdc3.ioConnectNET, Version=1.32.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3">
+      <HintPath>packages\fdc3.io.Connect.NET.1.32.0.0\lib\net45\fdc3.ioConnectNET.dll</HintPath>
+      <Private>True</Private>
     </Reference>
-    <Reference Include="ioConnectNET, Version=1.24.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\io.Connect.NET.1.24.0.0\lib\net45\ioConnectNET.dll</HintPath>
+    <Reference Include="ioConnectNET, Version=1.69.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3">
+      <HintPath>packages\io.Connect.NET.1.69.0.0\lib\net45\ioConnectNET.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="log4net">
       <HintPath>$(DOTNET_PACKAGES)\log4net.2.0.3\lib\net40-full\log4net.dll</HintPath>

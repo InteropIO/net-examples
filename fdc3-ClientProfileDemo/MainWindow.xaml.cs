@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
@@ -398,7 +398,7 @@ namespace FDC3ChannelsClientProfileDemo
                         }).ToArray();
 
                         Application.Current?.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle,
-                            new Action(delegate
+                            new System.Action(delegate
                             {
                                 try
                                 {
@@ -447,7 +447,7 @@ namespace FDC3ChannelsClientProfileDemo
                         return;
                     }
 
-                    Dispatcher.BeginInvoke((Action)(() =>
+                    Dispatcher.BeginInvoke((System.Action)(() =>
                     {
                         var contact = (ClientsListView.SelectedItem as ClientData)?.Contact;
                         if (contact != null)
@@ -532,7 +532,7 @@ namespace FDC3ChannelsClientProfileDemo
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke((Action)(() => Interop_OnConnectionStatusChanged(sender, e)));
+                Dispatcher.BeginInvoke((System.Action)(() => Interop_OnConnectionStatusChanged(sender, e)));
                 return;
             }
 
@@ -543,7 +543,7 @@ namespace FDC3ChannelsClientProfileDemo
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke((Action)(() => Interop_OnTargetStatusChanged(sender, e)));
+                Dispatcher.BeginInvoke((System.Action)(() => Interop_OnTargetStatusChanged(sender, e)));
                 return;
             }
 
@@ -661,7 +661,7 @@ namespace FDC3ChannelsClientProfileDemo
 
         private void TextBoxFilter_TextChanged(object sender, TextChangedEventArgs e)
         {
-            Dispatcher.BeginInvoke(new Action(() =>
+            Dispatcher.BeginInvoke(new System.Action(() =>
             {
                 ((CollectionViewSource)FindResource("clientsCvs")).View.Refresh();
             }));

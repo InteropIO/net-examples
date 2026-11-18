@@ -36,8 +36,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ioConnectNET, Version=1.22.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\io.Connect.NET.1.22.0.0\lib\net45\ioConnectNET.dll</HintPath>
+    <Reference Include="ioConnectNET, Version=1.69.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3">
+      <HintPath>packages\io.Connect.NET.1.69.0.0\lib\net45\ioConnectNET.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Web.WebView2.Core, Version=1.0.2839.0, Culture=neutral, PublicKeyToken=2a8ab48044d2601e, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Web.WebView2.1.0.2839-prerelease\lib\net462\Microsoft.Web.WebView2.Core.dll</HintPath>

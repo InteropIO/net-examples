@@ -131,6 +131,8 @@ namespace AdvancedDeclarativeInterop
 
     internal class RectangleSerializer : IAGMObjectSerializer
     {
+        public ObjectSerializerSettings Settings { get; set; }
+
         public Value Serialize(object @object, ObjectSerializerSettings settings)
         {
             var rect = (Rectangle) @object;

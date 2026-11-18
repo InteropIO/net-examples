@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Condition="Exists('AppManagerDemo.linkImport')" Project="AppManagerDemo.linkImport" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
@@ -37,8 +37,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Glue42, Version=2018.2168.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3, processorArchitecture=MSIL">
-      <HintPath>packages\Glue42.2018.2168.0.0\lib\net45\Glue42.dll</HintPath>
+    <Reference Include="ioConnectNET, Version=1.69.0.0, Culture=neutral, PublicKeyToken=dbb353f1544d18d3">
+      <HintPath>packages\io.Connect.NET.1.69.0.0\lib\net45\ioConnectNET.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
