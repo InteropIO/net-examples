@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using DOT.Core.Extensions;
@@ -20,21 +22,33 @@ namespace WPFApp
         {
             InitializeComponent();
 
+            AppDomain.CurrentDomain.UnhandledException += (sender, args) =>
+            {
+                // handle unhandled exceptions
+                MessageBox.Show(args.ExceptionObject.ToString(), "Unhandled Exception");
+            };
+
+            TaskScheduler.UnobservedTaskException += (sender, args) =>
+            {
+                // handle unobserved task exceptions
+                MessageBox.Show(args.Exception.ToString(), "Unobserved Task Exception");
+            };
+            
             DataContext = this;
             Visibility = Visibility.Hidden;
             UpdateUI(false);
         }
 
-        public void AcceptNotification(string customerId, double customerPrice)
+        public void AcceptNotification(string customerId, double customerPrice, IOCDAction action)
         {
             //accept handler with notification object state
-            MessageBox.Show(customerId + " price " + customerPrice, "Accepted");
+            MessageBox.Show(customerId + " price " + customerPrice + "\n" + glue_.ProtocolSerializer.SerializeMessage(action), "Accepted");
         }
 
-        public void RejectNotification(string customerId, double customerPrice)
+        public void RejectNotification(string customerId, double customerPrice, IOCDAction action)
         {
             //reject handler with notification object state
-            MessageBox.Show(customerId + " price " + customerPrice, "Rejected");
+            MessageBox.Show(customerId + " price " + customerPrice + "\n" + glue_.ProtocolSerializer.SerializeMessage(action), "Rejected");
         }
 
         public void NotificationRoutingDetail(IServiceOptions options = null)
@@ -86,6 +100,8 @@ namespace WPFApp
                     ? severity
                     : Tick42.Notifications.Severity.Low,
                 Type = NotificationType.Notification,
+                ToastExpiry = 2,
+                PanelExpiry = 10000,
                 Category = "category",
                 Source = "source",
                 Description = Description.Text,
@@ -102,7 +118,18 @@ namespace WPFApp
                         Name = nameof(INotificationHandler.AcceptNotification),
                         DisplayName = "Accept",
                         Description = "Accept",
-                        Parameters = new object[] { new { customerId = "41234", customerPrice = 3.14 } },
+                        Parameters = new object[]
+                        {
+                            new
+                            {
+                                customerId = "41234", customerPrice = 3.14, action =
+                                    new IOCDAction
+                                    {
+                                        Action = "Accept", CustomerId = "41234", RelationId = "rel1",
+                                        Arguments = new Dictionary<string, object>{{"key1", 4}}
+                                    }
+                            }
+                        },
                         SetTarget = c => c.WithTargetMatching(s => s.InstanceId, glue_.Identity.InstanceId)
                     },
                     new NotificationActionSettings
@@ -110,7 +137,18 @@ namespace WPFApp
                         Name = nameof(INotificationHandler.RejectNotification),
                         DisplayName = "Reject",
                         Description = "Reject",
-                        Parameters = new object[] { new { customerId = "41234", customerPrice = 3.14 } },
+                        Parameters = new object[]
+                        {
+                            new
+                            {
+                                customerId = "41234", customerPrice = 3.14, action =
+                                    new IOCDAction
+                                    {
+                                        Action = "Reject", CustomerId = "41234", RelationId = "rel1",
+                                        Arguments = new Dictionary<string, object>{{"key1", 4}}
+                                    }
+                            }
+                        },
                         SetTarget = c => c.WithTargetMatching(s => s.InstanceId, glue_.Identity.InstanceId)
                     }
                 },
